@@ -1,0 +1,175 @@
+<!-- Donate Hero Section -->
+<section class="donate-hero">
+    <div class="container">
+        <div class="donate-hero-content">
+            <h1 class="donate-hero-title">Support Our Mission</h1>
+            <p class="donate-hero-subtitle">Your generous donations help us serve the community and strengthen our programs.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Donate Options Section -->
+<section class="donate-options section">
+    <div class="container">
+        <div class="donate-grid">
+            <!-- Zelle Option -->
+            <div class="donate-option">
+                <div class="option-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <h3 class="option-title">Donate with Zelle</h3>
+                <p class="option-description">Send your donation directly using Zelle - quick, secure, and no processing fees.</p>
+                <div class="zelle-info">
+                    <p><strong>Send to:</strong></p>
+                    <p class="zelle-email">mascentralindy@gmail.com</p>
+                </div>
+                <button class="btn btn-secondary copy-email-btn" onclick="copyEmail()">Copy Email</button>
+            </div>
+
+            <!-- Card Payment Option -->
+            <div class="donate-option">
+                <div class="option-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                </div>
+                <h3 class="option-title">Donate with Card</h3>
+                <p class="option-description">Make a secure donation using your debit or credit card.</p>
+                <button class="btn btn-primary" id="showFormBtn">Donate Now</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Card Donation Form (Hidden by default) -->
+<section class="card-form-section" id="cardFormSection" style="display: none;">
+    <div class="container">
+        <div class="form-container">
+            <div class="form-header">
+                <h2>Donate with Card</h2>
+                <button class="close-form-btn" id="closeFormBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="donationForm" class="donation-form">
+                <!-- Amount Selection -->
+                <div class="form-group">
+                    <label class="form-label">Donation Amount</label>
+                    <div class="amount-buttons">
+                        <button type="button" class="amount-btn" data-amount="25">$25</button>
+                        <button type="button" class="amount-btn" data-amount="50">$50</button>
+                        <button type="button" class="amount-btn" data-amount="100">$100</button>
+                        <button type="button" class="amount-btn" data-amount="250">$250</button>
+                        <button type="button" class="amount-btn" data-amount="500">$500</button>
+                        <button type="button" class="amount-btn" data-amount="custom">Custom</button>
+                    </div>
+                    <input type="number" id="customAmount" name="amount" class="form-input amount-input" placeholder="Enter custom amount" min="1" step="0.01">
+                </div>
+
+                <!-- Recurring Toggle -->
+                <div class="form-group">
+                    <div class="toggle-container">
+                        <input type="checkbox" id="recurring" name="recurring" class="toggle-checkbox">
+                        <label for="recurring" class="toggle-label">Make this a recurring monthly donation</label>
+                    </div>
+                </div>
+
+                <!-- Donation Purpose -->
+                <div class="form-group">
+                    <label for="purpose" class="form-label">Donation Purpose (Optional)</label>
+                    <select id="purpose" name="purpose" class="form-select">
+                        <option value="">Select purpose...</option>
+                        <option value="general">General Fund</option>
+                        <option value="education">Education Programs</option>
+                        <option value="social-services">Social Services</option>
+                        <option value="youth">Youth Programs</option>
+                        <option value="events">Community Events</option>
+                        <option value="facility">Facility Maintenance</option>
+                        <option value="emergency">Emergency Relief</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <!-- Processing Fee Toggle -->
+                <div class="form-group">
+                    <div class="toggle-container">
+                        <input type="checkbox" id="coverFees" name="coverFees" class="toggle-checkbox">
+                        <label for="coverFees" class="toggle-label">Add 2.50% to cover processing fees</label>
+                    </div>
+                    <div class="fee-info" id="feeInfo" style="display: none;">
+                        <p>Processing fee: $<span id="feeAmount">0.00</span></p>
+                        <p><strong>Total: $<span id="totalAmount">0.00</span></strong></p>
+                    </div>
+                </div>
+
+                <!-- Personal Information -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName" class="form-label">First Name *</label>
+                        <input type="text" id="firstName" name="firstName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName" class="form-label">Last Name *</label>
+                        <input type="text" id="lastName" name="lastName" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address *</label>
+                    <input type="email" id="email" name="email" class="form-input" required>
+                </div>
+
+                <!-- Card Information -->
+                <div class="form-group">
+                    <label for="cardNumber" class="form-label">Card Number *</label>
+                    <input type="text" id="cardNumber" name="cardNumber" class="form-input" placeholder="1234 5678 9012 3456" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expiry" class="form-label">Expiry Date *</label>
+                        <input type="text" id="expiry" name="expiry" class="form-input" placeholder="MM/YY" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cvv" class="form-label">CVV *</label>
+                        <input type="text" id="cvv" name="cvv" class="form-input" placeholder="123" required>
+                    </div>
+                </div>
+
+                <!-- Optional Message -->
+                <div class="form-group">
+                    <label for="message" class="form-label">Message (Optional)</label>
+                    <textarea id="message" name="message" class="form-textarea" rows="3" placeholder="Leave a message with your donation..."></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
+                        <span class="btn-text">Complete Donation</span>
+                        <span class="btn-loading" style="display: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                            </svg>
+                            Processing...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Success/Error Messages -->
+<div class="form-message" id="formMessage" style="display: none;">
+    <div class="message-content">
+        <div class="message-icon"></div>
+        <div class="message-text"></div>
+    </div>
+</div>
