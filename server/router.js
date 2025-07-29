@@ -9,6 +9,9 @@ const {
     getUpcomingEvents 
 } = require("./controllers/eventController");
 
+const { getContactPage, submitContactForm } = require("./controllers/contactController");
+
+
 const { generalLogger } = require("./generalLogger")
 if (process.env.NODE_ENV !== "production") {
     process.env.STRIPE_PUBLIC_KEY = process.env.STRIPE_PUBLIC_KEY_TEST
@@ -50,15 +53,7 @@ route.get("/events/:slug", getEventDetails);
 route.get("/api/events/more", getMoreEvents);
 route.get("/api/events/upcoming", getUpcomingEvents);
 
-route.get("/contact", (req, res) => {
-    res.render("contact", {
-        title: "Contact Us",
-        description: "Get in touch with MAS Central Indy - we'd love to hear from you",
-        additionalCSS: ["contact.css"],
-        additionalJS: ["contact.js"],
-        layout: "layout"
-    });
-});
+route.get("/contact", getContactPage);
 
 // Additional routes
 route.get("/donate", (req, res) => {
@@ -91,5 +86,6 @@ route.get("/terms-of-service", (req, res) => {
 
 // *********** POST requests **********
 route.post("/api/events/:eventId/share", trackEventShare);
+route.post("/contact", submitContactForm);
 
 module.exports = route
