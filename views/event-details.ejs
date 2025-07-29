@@ -1,0 +1,295 @@
+<!-- Event Details Hero Section -->
+<section class="event-hero">
+    <div class="container">
+        <div class="event-hero-content">
+            <div class="event-breadcrumb">
+                <a href="/events/past" class="breadcrumb-link">Past Events</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current"><%= event.title %></span>
+            </div>
+            
+            <div class="event-category-badge">
+                <span class="category-label"><%= formatCategory(event.category) %></span>
+            </div>
+            
+            <h1 class="event-title"><%= event.title %></h1>
+            <p class="event-subtitle"><%= event.shortDescription || event.description %></p>
+            
+            <div class="event-meta">
+                <div class="meta-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span><%= formatDateTime(event.eventDate, event.startTime) %></span>
+                </div>
+                
+                <% if (event.location && event.location.venue) { %>
+                <div class="meta-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span><%= event.location.venue %></span>
+                </div>
+                <% } %>
+                
+                <div class="meta-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M7 7h.01"></path>
+                        <path d="M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 0 1 0 2.828l-7 7a2 2 0 0 1-2.828 0l-7-7A1.994 1.994 0 0 1 3 12V7a4 4 0 0 1 4-4z"></path>
+                    </svg>
+                    <span><%= event.eventType === 'virtual' ? 'Virtual Event' : 'In-Person Event' %></span>
+                </div>
+            </div>
+            
+            <div class="event-actions">
+                <button class="share-btn-hero" data-event-id="<%= event._id %>" data-title="<%= event.title %>" data-url="/events/<%= event.slug %>">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    Share Event
+                </button>
+                
+                <button class="copy-btn-hero" data-event-id="<%= event._id %>" data-title="<%= event.title %>" data-url="/events/<%= event.slug %>">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                    </svg>
+                    Copy Event Link
+                </button>
+            </div>
+        </div>
+        
+        <% if (event.media && event.media.featuredImage && event.media.featuredImage.url) { %>
+        <div class="hero-featured-image">
+            <img src="<%= event.media.featuredImage.url %>" alt="<%= event.media.featuredImage.alt || event.title %>" class="hero-featured-img">
+        </div>
+        <% } %>
+    </div>
+</section>
+
+<!-- Event Media Section -->
+<% if ((event.media && event.media.featuredImage && event.media.featuredImage.url) || (event.media && event.media.videos && event.media.videos.length > 0) || (event.media && event.media.gallery && event.media.gallery.length > 0)) { %>
+<section class="event-media">
+    <div class="container">
+        <% if (event.media && event.media.videos && event.media.videos.length > 0) { %>
+            <!-- Video Content -->
+            <div class="video-section">
+                <div class="video-player">
+                    <div class="video-thumbnail">
+                        <img src="<%= event.media.featuredImage ? event.media.featuredImage.url : '/images/video-placeholder.jpg' %>" alt="<%= event.title %>" class="video-poster">
+                        <button class="play-button-large" data-video="<%= event._id %>" data-video-url="<%= event.media.videos[0].url || '' %>">
+                            <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5,3 19,12 5,21"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+        <!-- Gallery -->
+        <% if (event.media && event.media.gallery && event.media.gallery.length > 0) { %>
+        <div class="gallery-section">
+            <h3 class="gallery-title">Photo Gallery</h3>
+            <div class="gallery-grid <%= event.media.gallery.length === 1 ? 'single-item' : '' %>">
+                <% event.media.gallery.slice(0, 6).forEach(function(image, index) { %>
+                    <div class="gallery-item" data-index="<%= index %>">
+                        <img src="<%= image.url %>" alt="<%= image.alt || event.title %>" class="gallery-image" loading="lazy">
+                        <div class="gallery-overlay">
+                            <button class="gallery-view-btn">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                <% }); %>
+                
+                <% if (event.media.gallery.length > 6) { %>
+                <div class="gallery-item view-more">
+                    <div class="view-more-content">
+                        <span class="view-more-text">+<%= event.media.gallery.length - 6 %> more</span>
+                        <button class="view-all-btn">View All</button>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</section>
+<% } %>
+
+<!-- Event Details Content -->
+<section class="event-content">
+    <div class="container">
+        <div class="content-grid">
+            <div class="main-content">
+                <div class="event-description">
+                    <h2>About This Event</h2>
+                    <div class="description-text">
+                        <%= event.description %>
+                    </div>
+                </div>
+                
+                <% if (event.tags && event.tags.length > 0) { %>
+                <div class="event-tags">
+                    <h3>Tags</h3>
+                    <div class="tags-list">
+                        <% event.tags.forEach(function(tag) { %>
+                            <span class="tag"><%= tag %></span>
+                        <% }); %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="event-info-card">
+                    <h3>Event Information</h3>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Date & Time</span>
+                        <span class="info-value"><%= formatDateTime(event.eventDate, event.startTime) %></span>
+                        <% if (event.eventDate && event.endTime) { %>
+                            <span class="info-value-sub">Ends: <%= formatDateTime(event.eventDate, event.endTime) %></span>
+                        <% } %>
+                    </div>
+                    
+                    <% if (event.location && event.location.venue) { %>
+                    <div class="info-item">
+                        <span class="info-label">Location</span>
+                        <span class="info-value"><%= event.location.venue %></span>
+                        <% if (event.location.address) { %>
+                            <span class="info-value-sub">
+                                <%= event.location.address.street ? event.location.address.street + ', ' : '' %>
+                                <%= event.location.address.city ? event.location.address.city + ', ' : '' %>
+                                <%= event.location.address.state ? event.location.address.state + ' ' : '' %>
+                                <%= event.location.address.zipCode ? event.location.address.zipCode : '' %>
+                            </span>
+                        <% } %>
+                    </div>
+                    <% } %>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Event Type</span>
+                        <span class="info-value"><%= event.eventType === 'virtual' ? 'Virtual Event' : 'In-Person Event' %></span>
+                    </div>
+                    
+                    <% if (event.registration && event.registration.isRequired) { %>
+                    <div class="info-item">
+                        <span class="info-label">Registration</span>
+                        <span class="info-value">Required</span>
+                        <% if (event.registration.fee && event.registration.fee.amount > 0) { %>
+                            <span class="info-value-sub">Fee: $<%= event.registration.fee.amount %></span>
+                        <% } %>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Video Modal -->
+<div class="video-modal" id="videoModal">
+    <div class="video-modal-overlay"></div>
+    <div class="video-modal-content">
+        <button class="video-modal-close" aria-label="Close video">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <div class="video-container">
+            <iframe id="videoFrame" src="" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+<!-- Gallery Modal -->
+<div class="gallery-modal" id="galleryModal">
+    <div class="gallery-modal-overlay"></div>
+    <div class="gallery-modal-content">
+        <button class="gallery-modal-close" aria-label="Close gallery">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <div class="gallery-viewer">
+            <button class="gallery-nav gallery-prev" aria-label="Previous image">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15,18 9,12 15,6"></polyline>
+                </svg>
+            </button>
+            <img id="galleryImage" src="" alt="" class="gallery-modal-image">
+            <button class="gallery-nav gallery-next" aria-label="Next image">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9,18 15,12 9,6"></polyline>
+                </svg>
+            </button>
+        </div>
+        <div class="gallery-counter">
+            <span id="galleryCounter">1 of 1</span>
+        </div>
+    </div>
+</div>
+
+<%# EJS Helper Functions %>
+<%
+function formatCategory(category) {
+    const categoryMap = {
+        'community-service': 'Community Service',
+        'educational': 'Educational',
+        'religious': 'Religious',
+        'cultural': 'Cultural',
+        'youth': 'Youth Program',
+        'interfaith': 'Interfaith',
+        'fundraising': 'Fundraising',
+        'health-wellness': 'Health & Wellness',
+        'social': 'Social Event',
+        'workshop': 'Workshop',
+        'conference': 'Conference',
+        'meeting': 'Meeting',
+        'other': 'Other'
+    };
+    return categoryMap[category] || 'Event';
+}
+
+function formatDateTime(date, time) {
+    if (!date) return 'Date TBA';
+    try {
+        const dateOptions = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        const formattedDate = new Date(date).toLocaleDateString('en-US', dateOptions);
+        
+        if (time) {
+            const [hours, minutes] = time.split(':');
+            const timeObj = new Date();
+            timeObj.setHours(parseInt(hours), parseInt(minutes));
+            const formattedTime = timeObj.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+            return `${formattedDate} at ${formattedTime}`;
+        }
+        
+        return formattedDate;
+    } catch (error) {
+        return 'Date TBA';
+    }
+}
+%>

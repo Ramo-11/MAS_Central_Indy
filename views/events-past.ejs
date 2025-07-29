@@ -1,0 +1,237 @@
+<!-- Media Hub Hero Section -->
+<section class="media-hero">
+    <div class="container">
+        <div class="media-hero-content">
+            <h1 class="media-hero-title">Past Events</h1>
+            <p class="media-hero-subtitle">Explore our community events, educational content, and organizational highlights through photos, videos, and news updates.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Error Banner (if error exists) -->
+<% if (typeof error !== 'undefined' && error) { %>
+<section class="error-banner">
+    <div class="container">
+        <div class="error-banner-content">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p><%= error %></p>
+        </div>
+    </div>
+</section>
+<% } %>
+
+<!-- Category Filter Navigation -->
+<section class="category-filter-section">
+    <div class="container">
+        <div class="category-filter">
+            <button class="category-filter-btn <%= currentCategory === 'all' ? 'active' : '' %>" data-category="all">All Events</button>
+            <button class="category-filter-btn <%= currentCategory === 'community-service' ? 'active' : '' %>" data-category="community-service">Community Service</button>
+            <button class="category-filter-btn <%= currentCategory === 'educational' ? 'active' : '' %>" data-category="educational">Educational</button>
+            <button class="category-filter-btn <%= currentCategory === 'religious' ? 'active' : '' %>" data-category="religious">Religious</button>
+            <button class="category-filter-btn <%= currentCategory === 'cultural' ? 'active' : '' %>" data-category="cultural">Cultural</button>
+            <button class="category-filter-btn <%= currentCategory === 'youth' ? 'active' : '' %>" data-category="youth">Youth Program</button>
+            <button class="category-filter-btn <%= currentCategory === 'interfaith' ? 'active' : '' %>" data-category="interfaith">Interfaith</button>
+            <button class="category-filter-btn <%= currentCategory === 'social' ? 'active' : '' %>" data-category="social">Social Event</button>
+        </div>
+    </div>
+</section>
+
+<!-- Events Grid -->
+<section class="events-grid-section">
+    <div class="container">
+        <div class="events-grid" id="eventsGrid">
+            <% if (events && events.length > 0) { %>
+                <% events.forEach(function(event) { %>
+                    <article class="event-card" data-event-id="<%= event._id %>">
+                        <div class="event-thumbnail">
+                            <% if (event.media && event.media.videos && event.media.videos.length > 0) { %>
+                                <!-- Video Content -->
+                                <div class="video-placeholder">
+                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <polygon points="5,3 19,12 5,21"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="play-overlay">
+                                    <button class="play-button" data-video="<%= event._id %>" data-video-url="<%= event.media.videos[0].url || '' %>">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <polygon points="5,3 19,12 5,21"></polygon>
+                                        </svg>
+                                    </button>
+                                </div>
+                            <% } else if (event.media && event.media.gallery && event.media.gallery.length > 3) { %>
+                                <!-- Gallery Collage -->
+                                <div class="media-collage">
+                                    <img src="<%= event.media.gallery[0].url %>" alt="<%= event.media.gallery[0].alt || event.title %>" class="collage-image main" loading="lazy">
+                                    <img src="<%= event.media.gallery[1].url %>" alt="<%= event.media.gallery[1].alt || event.title %>" class="collage-image small-1" loading="lazy">
+                                    <img src="<%= event.media.gallery[2].url %>" alt="<%= event.media.gallery[2].alt || event.title %>" class="collage-image small-2" loading="lazy">
+                                    <div class="gallery-overlay">+<%= event.media.gallery.length - 3 %> more</div>
+                                </div>
+                                <div class="gallery-indicator">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21,15 16,10 5,21"></polyline>
+                                    </svg>
+                                </div>
+                            <% } else if (event.media && event.media.featuredImage && event.media.featuredImage.url) { %>
+                                <!-- Single Image -->
+                                <img src="<%= event.media.featuredImage.url %>" alt="<%= event.media.featuredImage.alt || event.title %>" class="event-image" loading="lazy">
+                                <% if (event.media && event.media.gallery && event.media.gallery.length > 0) { %>
+                                    <div class="gallery-indicator">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21,15 16,10 5,21"></polyline>
+                                        </svg>
+                                    </div>
+                                <% } %>
+                            <% } else { %>
+                                <!-- Placeholder -->
+                                <div class="event-placeholder">
+                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21,15 16,10 5,21"></polyline>
+                                    </svg>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <div class="event-content">
+                            <span class="event-category"><%= formatCategory(event.category) %></span>
+                            <h3 class="event-title">
+                                <a href="/events/<%= event.slug %>" class="event-title-link"><%= event.title %></a>
+                            </h3>
+                            <p class="event-description">
+                                <%= event.shortDescription || (event.description && event.description.length > 120 ? event.description.substring(0, 120) + '...' : event.description || 'No description available') %>
+                            </p>
+                            <div class="event-meta">
+                                <span class="event-date"><%= formatDate(event.eventDate) %></span>
+                                <% if (event.media && event.media.videos && event.media.videos.length > 0) { %>
+                                    <span class="media-type">Video</span>
+                                <% } else if (event.media && event.media.gallery && event.media.gallery.length > 0) { %>
+                                    <span class="media-count"><%= event.media.gallery.length %> Photos</span>
+                                <% } else { %>
+                                    <a href="/events/<%= event.slug %>" class="event-link">Learn More</a>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="event-actions">
+                            <button class="share-btn" data-event-id="<%= event._id %>" data-title="<%= event.title %>" data-url="/events/<%= event.slug %>">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                            </button>
+                            <button class="copy-btn" data-event-id="<%= event._id %>" data-title="<%= event.title %>" data-url="/events/<%= event.slug %>">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </article>
+                <% }); %>
+            <% } %>
+        </div>
+        
+        <!-- Load More Button -->
+        <% if (hasMore) { %>
+        <div class="load-more-container">
+            <button class="load-more-btn" data-page="<%= currentPage + 1 %>" data-category="<%= currentCategory %>">
+                <span class="load-text">Load More Events</span>
+                <span class="loading-text" style="display: none;">Loading...</span>
+            </button>
+        </div>
+        <% } %>
+        
+        <!-- No More Content Message -->
+        <% if (!hasMore && events && events.length > 0) { %>
+        <div class="no-more-content">
+            <p>You've reached the end of our events.</p>
+        </div>
+        <% } %>
+        
+        <!-- No Events Message -->
+        <% if (!events || events.length === 0) { %>
+        <div class="no-events">
+            <div class="no-events-content">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21,15 16,10 5,21"></polyline>
+                </svg>
+                <h3>No events found</h3>
+                <p>There are currently no events in this category. Check back soon for updates!</p>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</section>
+
+<!-- Video Modal -->
+<div class="video-modal" id="videoModal">
+    <div class="video-modal-overlay"></div>
+    <div class="video-modal-content">
+        <button class="video-modal-close" aria-label="Close video">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <div class="video-container">
+            <iframe id="videoFrame" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        </div>
+    </div>
+</div>
+
+<!-- Link to external CSS -->
+<link rel="stylesheet" href="/css/media-hub.css">
+
+<!-- Link to external JavaScript -->
+<script src="/js/media-hub.js"></script>
+
+<%# EJS Helper Functions %>
+<%
+function formatCategory(category) {
+    const categoryMap = {
+        'community-service': 'Community Service',
+        'educational': 'Educational',
+        'religious': 'Religious',
+        'cultural': 'Cultural',
+        'youth': 'Youth Program',
+        'interfaith': 'Interfaith',
+        'fundraising': 'Fundraising',
+        'health-wellness': 'Health & Wellness',
+        'social': 'Social Event',
+        'workshop': 'Workshop',
+        'conference': 'Conference',
+        'meeting': 'Meeting',
+        'other': 'Other'
+    };
+    return categoryMap[category] || 'Event';
+}
+
+function formatDate(date) {
+    if (!date) return 'Date TBA';
+    try {
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        return new Date(date).toLocaleDateString('en-US', options);
+    } catch (error) {
+        return 'Date TBA';
+    }
+}
+%>

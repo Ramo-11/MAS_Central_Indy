@@ -1,0 +1,123 @@
+<!-- Error Page -->
+<section class="error-section">
+    <div class="container">
+        <div class="error-content">
+            <div class="error-icon">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            
+            <h1 class="error-title">
+                <% if (typeof status !== 'undefined') { %>
+                    <%= status %> Error
+                <% } else { %>
+                    Oops! Something went wrong
+                <% } %>
+            </h1>
+            
+            <p class="error-message">
+                <% if (typeof message !== 'undefined') { %>
+                    <%= message %>
+                <% } else { %>
+                    We're sorry, but something unexpected happened. Please try again later.
+                <% } %>
+            </p>
+            
+            <% if (process.env.NODE_ENV === 'development' && typeof error !== 'undefined') { %>
+                <div class="error-details">
+                    <h3>Error Details (Development Only):</h3>
+                    <pre><%= error %></pre>
+                </div>
+            <% } %>
+            
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary">Go Home</a>
+                <button onclick="history.back()" class="btn btn-outline">Go Back</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.error-section {
+    padding: var(--spacing-3xl) 0;
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+.error-content {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.error-icon {
+    color: var(--gray-400);
+    margin-bottom: var(--spacing-lg);
+}
+
+.error-title {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--gray-900);
+    margin-bottom: var(--spacing-md);
+}
+
+.error-message {
+    font-size: var(--font-size-lg);
+    color: var(--gray-600);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+.error-details {
+    background: var(--gray-100);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    text-align: left;
+}
+
+.error-details h3 {
+    color: var(--gray-800);
+    margin-bottom: var(--spacing-md);
+}
+
+.error-details pre {
+    color: var(--gray-700);
+    font-size: var(--font-size-sm);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.error-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+    .error-title {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .error-message {
+        font-size: var(--font-size-base);
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .error-actions .btn {
+        width: 200px;
+    }
+}
+</style>
