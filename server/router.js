@@ -36,6 +36,7 @@ route.get("/about", (req, res) => {
         title: "About Us", 
         description: "Learn more about our mission, vision, and the team behind MAS Central Indy",
         additionalCSS: ["about.css"],
+        additionalJS: ["about.js"],
         layout: "layout"
     });
 });
