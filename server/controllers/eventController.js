@@ -1,256 +1,63 @@
 const Event = require("../../models/Event");
 const { generalLogger } = require("../generalLogger");
 
-// Get future events
-const getFutureEvents = async (req, res) => {
+// Get all events (unified page)
+const getAllEvents = async (req, res) => {
     try {
-        const { category = 'all', page = 1, limit = 12 } = req.query;
-        const skip = (page - 1) * limit;
-        
-        // Build base query for future events
-        let query = {
-            status: 'published',
-            isPublic: true,
-            isArchived: { $ne: true },
-            eventDate: { $gte: new Date() }
-        };
-
-        // Apply category filters
-        if (category && category !== 'all') {
-            switch (category) {
-                case 'videos':
-                    query['media.videos.0'] = { $exists: true };
-                    break;
-                case 'gallery':
-                    query['media.gallery.0'] = { $exists: true };
-                    break;
-                case 'news':
-                    query.category = { $in: ['educational', 'community-service', 'fundraising'] };
-                    break;
-                case 'events':
-                    query.category = { $in: ['cultural', 'social', 'religious', 'interfaith'] };
-                    break;
-                default:
-                    query.category = category;
-            }
-        }
-
-        let events = [];
-        let totalEvents = 0;
-        let featuredEvents = [];
-
-        try {
-            // Execute database queries
-            const queries = [
-                Event.find(query)
-                    .sort({ eventDate: 1 }) // Changed from startDate to eventDate
-                    .skip(skip)
-                    .limit(parseInt(limit))
-                    .lean(),
-                Event.countDocuments(query)
-            ];
-
-            generalLogger.info(`Fetching future events for category: ${category}, page: ${page}, limit: ${limit}`);
-
-            // Add featured events query if on first page
-            if (page == 1) {
-                queries.push(
-                    Event.find({
-                        status: 'published',
-                        isPublic: true,
-                        featured: true,
-                        isArchived: { $ne: true },
-                        eventDate: { $gte: new Date() } // Changed from startDate to eventDate
-                    })
-                    .sort({ eventDate: 1 }) // Changed from startDate to eventDate
-                    .limit(2)
-                    .lean()
-                );
-            }
-
-            const results = await Promise.all(queries);
-            events = results[0] || [];
-            totalEvents = results[1] || 0;
-            featuredEvents = results[2] || [];
-
-            generalLogger.info(`Fetched ${events.length} future events and ${featuredEvents.length} featured events for category: ${category}`);
-
-        } catch (dbError) {
-            generalLogger.error(`Database query error in getFutureEvents: ${dbError.message}`);
-            // Continue with empty arrays to avoid breaking the page
-        }
-
-        const hasMore = skip + events.length < totalEvents;
-        const totalPages = Math.ceil(totalEvents / parseInt(limit));
-
-        // Render the future events page
-        res.render("events-future", {
-            title: "Future Events",
-            description: "Discover our upcoming events and activities at MAS Central Indy",
-            additionalCSS: ["events-future.css"],
-            additionalJS: ["events-future.js"],
-            layout: "layout",
-            events,
-            featuredEvents,
-            currentCategory: category,
-            hasMore,
-            currentPage: parseInt(page),
-            totalPages
+        // Render the unified events page
+        res.render("events", {
+            title: "Events",
+            description: "Discover our community events, activities, and programs at MAS Central Indy",
+            additionalCSS: ["events.css"],
+            additionalJS: ["events.js"],
+            layout: "layout"
         });
 
     } catch (error) {
-        generalLogger.error(`Error in getFutureEvents: ${error.message}`);
+        generalLogger.error(`Error in getAllEvents: ${error.message}`);
         
         // Render error state
-        res.render("events-future", {
-            title: "Future Events", 
-            description: "Discover our upcoming events and activities at MAS Central Indy",
-            additionalCSS: ["events-future.css"],
-            additionalJS: ["events-future.js"],
+        res.render("events", {
+            title: "Events", 
+            description: "Discover our community events, activities, and programs at MAS Central Indy",
+            additionalCSS: ["events.css"],
+            additionalJS: ["events.js"],
             layout: "layout",
-            events: [],
-            featuredEvents: [],
-            currentCategory: 'all',
-            hasMore: false,
-            currentPage: 1,
-            totalPages: 0,
-            error: "Unable to load events at this time. Please try again later."
-        });
-    }
-};
-// Get past events
-const getPastEvents = async (req, res) => {
-    try {
-        const { category = 'all', page = 1, limit = 12 } = req.query;
-        const skip = (page - 1) * limit;
-        
-        // Build base query for past events
-        let query = {
-            status: 'published',
-            isPublic: true,
-            isArchived: { $ne: true },
-            eventDate: { $lt: new Date() } // Since you only use eventDate now
-        };
-
-        // Apply category filters
-        if (category && category !== 'all') {
-            switch (category) {
-                case 'videos':
-                    query['media.videos.0'] = { $exists: true };
-                    break;
-                case 'gallery':
-                    query['media.gallery.0'] = { $exists: true };
-                    break;
-                case 'news':
-                    query.category = { $in: ['educational', 'community-service', 'fundraising'] };
-                    break;
-                case 'events':
-                    query.category = { $in: ['cultural', 'social', 'religious', 'interfaith'] };
-                    break;
-                default:
-                    query.category = category;
-            }
-        }
-
-        let events = [];
-        let totalEvents = 0;
-        let featuredEvents = [];
-
-        try {
-            // Execute database queries
-            const queries = [
-                Event.find(query)
-                    .sort({ eventDate: -1 }) // Sort by eventDate only
-                    .skip(skip)
-                    .limit(parseInt(limit))
-                    .lean(),
-                Event.countDocuments(query)
-            ];
-
-            generalLogger.info(`Fetching past events for category: ${category}, page: ${page}, limit: ${limit}`);
-
-            // Add featured events query if on first page
-            if (page == 1) {
-                queries.push(
-                    Event.find({
-                        status: 'published',
-                        isPublic: true,
-                        featured: true,
-                        isArchived: { $ne: true },
-                        eventDate: { $lt: new Date() }
-                    })
-                    .sort({ eventDate: -1 })
-                    .limit(2)
-                    .lean()
-                );
-            }
-
-            const results = await Promise.all(queries);
-            events = results[0] || [];
-            totalEvents = results[1] || 0;
-            featuredEvents = results[2] || [];
-
-            generalLogger.info(`Fetched ${events.length} past events and ${featuredEvents.length} featured events for category: ${category}`);
-
-        } catch (dbError) {
-            generalLogger.error(`Database query error in getPastEvents: ${dbError.message}`);
-        }
-
-        const hasMore = skip + events.length < totalEvents;
-        const totalPages = Math.ceil(totalEvents / parseInt(limit));
-
-        res.render("events-past", {
-            title: "Past Events",
-            description: "View our previous events and community activities",
-            additionalCSS: ["events-past.css"],
-            additionalJS: ["events-past.js"],
-            layout: "layout",
-            events,
-            featuredEvents,
-            currentCategory: category,
-            hasMore,
-            currentPage: parseInt(page),
-            totalPages
-        });
-
-    } catch (error) {
-        generalLogger.error(`Error in getPastEvents: ${error.message}`);
-        
-        res.render("events-past", {
-            title: "Past Events", 
-            description: "View our previous events and community activities",
-            additionalCSS: ["events-past.css"],
-            additionalJS: ["events-past.js"],
-            layout: "layout",
-            events: [],
-            featuredEvents: [],
-            currentCategory: 'all',
-            hasMore: false,
-            currentPage: 1,
-            totalPages: 0,
             error: "Unable to load events at this time. Please try again later."
         });
     }
 };
 
-// Get more events for AJAX loading
-const getMoreEvents = async (req, res) => {
+// API endpoint to get events based on filters
+const getEventsAPI = async (req, res) => {
     try {
-        const { category = 'all', page = 1, limit = 6, type = 'future' } = req.query;
+        const { 
+            category = 'all', 
+            page = 1, 
+            limit = 12, 
+            period = 'upcoming',
+            featured = false 
+        } = req.query;
+        
         const skip = (page - 1) * limit;
         
-        // Build query based on event type (future or past)
+        // Build base query
         let query = {
-            status: 'published',
+            status: { $ne: 'draft' },
             isPublic: true,
             isArchived: { $ne: true }
         };
 
-        // Add date filter based on type
-        if (type === 'future') {
-            query.startDate = { $gte: new Date() };
-        } else {
-            query.startDate = { $lt: new Date() };
+        // Add date filter based on period
+        if (period === 'upcoming') {
+            query.eventDate = { $gte: new Date() };
+        } else if (period === 'past') {
+            query.eventDate = { $lt: new Date() };
+        }
+
+        // Add featured filter
+        if (featured === 'true') {
+            query.featured = true;
         }
 
         // Apply category filters
@@ -273,17 +80,33 @@ const getMoreEvents = async (req, res) => {
             }
         }
 
-        // Sort based on type
-        const sortOrder = type === 'future' ? { startDate: 1 } : { startDate: -1 };
+        let events = [];
+        let totalEvents = 0;
 
-        const [events, totalEvents] = await Promise.all([
-            Event.find(query)
-                .sort(sortOrder)
-                .skip(skip)
-                .limit(parseInt(limit))
-                .lean(),
-            Event.countDocuments(query)
-        ]);
+        try {
+            // Sort based on period
+            const sortOrder = period === 'upcoming' ? { eventDate: 1 } : { eventDate: -1 };
+
+            generalLogger.debug(`Fetching events with query: ${JSON.stringify(query)}, sort: ${JSON.stringify(sortOrder)}, page: ${page}, limit: ${limit}`);
+            // Execute database queries
+            const [eventResults, countResults] = await Promise.all([
+                Event.find(query)
+                    .sort(sortOrder)
+                    .skip(skip)
+                    .limit(parseInt(limit))
+                    .lean(),
+                Event.countDocuments(query)
+            ]);
+
+            events = eventResults || [];
+            totalEvents = countResults || 0;
+
+            generalLogger.info(`Fetched ${events.length} events for period: ${period}, category: ${category}, page: ${page}`);
+
+        } catch (dbError) {
+            generalLogger.error(`Database query error in getEventsAPI: ${dbError.message}`);
+            // Continue with empty arrays to avoid breaking the API
+        }
 
         const hasMore = skip + events.length < totalEvents;
         const totalPages = Math.ceil(totalEvents / parseInt(limit));
@@ -293,26 +116,99 @@ const getMoreEvents = async (req, res) => {
             events: events || [],
             hasMore,
             currentPage: parseInt(page),
-            totalPages
+            totalPages,
+            totalEvents
         });
 
     } catch (error) {
-        generalLogger.error(`Error in getMoreEvents: ${error.message}`);
+        generalLogger.error(`Error in getEventsAPI: ${error.message}`);
         return res.status(500).json({ 
             success: false, 
-            message: "Unable to load more events" 
+            message: "Unable to load events" 
+        });
+    }
+};
+
+// Get events for calendar view
+const getCalendarEvents = async (req, res) => {
+    try {
+        const { 
+            month, 
+            year, 
+            category = 'all'
+            // period = 'upcoming' 
+        } = req.query;
+
+        // Build base query
+        let query = {
+            status: { $ne: 'draft' },
+            isPublic: true,
+            isArchived: { $ne: true }
+        };
+
+        // Add date range filter for the specific month/year if provided
+        if (month && year) {
+            const startDate = new Date(parseInt(year), parseInt(month), 1);
+            const endDate = new Date(parseInt(year), parseInt(month) + 1, 0);
+            query.eventDate = { $gte: startDate, $lte: endDate };
+        } else {
+            // Default to current period filter
+            if (period === 'upcoming') {
+                query.eventDate = { $gte: new Date() };
+            } else if (period === 'past') {
+                query.eventDate = { $lt: new Date() };
+            }
+        }
+
+        // Apply category filters
+        if (category && category !== 'all') {
+            switch (category) {
+                case 'videos':
+                    query['media.videos.0'] = { $exists: true };
+                    break;
+                case 'gallery':
+                    query['media.gallery.0'] = { $exists: true };
+                    break;
+                case 'news':
+                    query.category = { $in: ['educational', 'community-service', 'fundraising'] };
+                    break;
+                case 'events':
+                    query.category = { $in: ['cultural', 'social', 'religious', 'interfaith'] };
+                    break;
+                default:
+                    query.category = category;
+            }
+        }
+
+        const events = await Event.find(query)
+            .sort({ eventDate: 1 })
+            .limit(100) // Limit to avoid too much data
+            .lean();
+
+        return res.status(200).json({
+            success: true,
+            events: events || []
+        });
+
+    } catch (error) {
+        generalLogger.error(`Error in getCalendarEvents: ${error.message}`);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to load calendar events"
         });
     }
 };
 
 // Get single event details
 const getEventDetails = async (req, res) => {
+
+    generalLogger.info(`Fetching details for event with slug: ${req.params.slug}`);
     try {
         const { slug } = req.params;
         
         const event = await Event.findOne({ 
             slug, 
-            status: 'published', 
+            status: { $ne: 'draft' }, 
             isPublic: true 
         }).lean();
 
@@ -353,35 +249,6 @@ const getEventDetails = async (req, res) => {
     }
 };
 
-// Get upcoming events (API endpoint)
-const getUpcomingEvents = async (req, res) => {
-    try {
-        const { limit = 10 } = req.query;
-        
-        const events = await Event.find({
-            status: 'published',
-            isPublic: true,
-            isArchived: { $ne: true },
-            startDate: { $gte: new Date() }
-        })
-        .sort({ startDate: 1 })
-        .limit(parseInt(limit))
-        .lean();
-        
-        return res.status(200).json({ 
-            success: true, 
-            events: events || []
-        });
-
-    } catch (error) {
-        generalLogger.error(`Error in getUpcomingEvents: ${error.message}`);
-        return res.status(500).json({ 
-            success: false, 
-            message: "Unable to fetch upcoming events" 
-        });
-    }
-};
-
 // Track event sharing
 const trackEventShare = async (req, res) => {
     try {
@@ -418,82 +285,10 @@ const trackEventShare = async (req, res) => {
     }
 };
 
-// Get events by category (API endpoint)
-const getEventsByCategory = async (req, res) => {
-    try {
-        const { category } = req.params;
-        const { limit = 10, page = 1, type = 'future' } = req.query;
-        const skip = (page - 1) * limit;
-
-        let query = {
-            status: 'published',
-            isPublic: true,
-            isArchived: { $ne: true }
-        };
-
-        // Add date filter based on type
-        if (type === 'future') {
-            query.startDate = { $gte: new Date() };
-        } else {
-            query.startDate = { $lt: new Date() };
-        }
-
-        if (category !== 'all') {
-            switch (category) {
-                case 'videos':
-                    query['media.videos.0'] = { $exists: true };
-                    break;
-                case 'gallery':
-                    query['media.gallery.0'] = { $exists: true };
-                    break;
-                case 'news':
-                    query.category = { $in: ['educational', 'community-service', 'fundraising'] };
-                    break;
-                case 'events':
-                    query.category = { $in: ['cultural', 'social', 'religious', 'interfaith'] };
-                    break;
-                default:
-                    query.category = category;
-            }
-        }
-
-        // Sort based on type
-        const sortOrder = type === 'future' ? { startDate: 1 } : { startDate: -1 };
-
-        const [events, totalEvents] = await Promise.all([
-            Event.find(query)
-                .sort(sortOrder)
-                .skip(skip)
-                .limit(parseInt(limit))
-                .lean(),
-            Event.countDocuments(query)
-        ]);
-
-        const hasMore = skip + events.length < totalEvents;
-
-        return res.status(200).json({
-            success: true,
-            events,
-            hasMore,
-            currentPage: parseInt(page),
-            totalPages: Math.ceil(totalEvents / parseInt(limit))
-        });
-
-    } catch (error) {
-        generalLogger.error(`Error in getEventsByCategory: ${error.message}`);
-        return res.status(500).json({
-            success: false,
-            message: "Unable to fetch events by category"
-        });
-    }
-};
-
 module.exports = {
-    getFutureEvents,
-    getPastEvents,
-    getMoreEvents,
+    getAllEvents,
+    getEventsAPI,
+    getCalendarEvents,
     getEventDetails,
-    getUpcomingEvents,
-    trackEventShare,
-    getEventsByCategory
+    trackEventShare
 };

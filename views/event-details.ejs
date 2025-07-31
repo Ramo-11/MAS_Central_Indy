@@ -3,7 +3,7 @@
     <div class="container">
         <div class="event-hero-content">
             <div class="event-breadcrumb">
-                <a href="/events/past" class="breadcrumb-link">Past Events</a>
+                <a href="/events" class="breadcrumb-link">All Events</a>
                 <span class="breadcrumb-separator">/</span>
                 <span class="breadcrumb-current"><%= event.title %></span>
             </div>
@@ -157,8 +157,20 @@
                     <h3>Event Information</h3>
                     
                     <div class="info-item">
-                        <span class="info-label">Date & Time</span>
-                        <span class="info-value"><%= formatDateTime(event.eventDate, event.startTime) %></span>
+                        <span class="info-label">
+                            <% if (event.startTime || event.endTime) { %>
+                                Date & Time
+                            <% } else { %>
+                                Date
+                            <% } %>
+                        </span>
+
+                        <% if (event.eventDate && event.startTime) { %>
+                            <span class="info-value"><%= formatDateTime(event.eventDate, event.startTime) %></span>
+                        <% } else if (event.eventDate) { %>
+                            <span class="info-value"><%= formatDateTime(event.eventDate) %></span>
+                        <% } %>
+
                         <% if (event.eventDate && event.endTime) { %>
                             <span class="info-value-sub">Ends: <%= formatDateTime(event.eventDate, event.endTime) %></span>
                         <% } %>

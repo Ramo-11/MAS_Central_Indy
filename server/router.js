@@ -1,18 +1,25 @@
 const express = require("express")
 require('dotenv').config()
 const { 
-    getFutureEvents,
-    getPastEvents,
-    getMoreEvents, 
+    getAllEvents,
+    getEventsAPI,
+    getCalendarEvents,
     getEventDetails,  
-    trackEventShare,
-    getUpcomingEvents 
+    trackEventShare
 } = require("./controllers/eventController");
 
 const { getContactPage, submitContactForm } = require("./controllers/contactController");
 
+const { 
+    createDonationPaymentIntent,
+    createRecurringDonation,
+    confirmDonationPayment,
+    handleStripeWebhook,
+    cancelRecurringDonation
+} = require("./controllers/stripeController");
 
 const { generalLogger } = require("./generalLogger")
+
 if (process.env.NODE_ENV !== "production") {
     process.env.STRIPE_PUBLIC_KEY = process.env.STRIPE_PUBLIC_KEY_TEST
 } else {
@@ -41,28 +48,33 @@ route.get("/about", (req, res) => {
     });
 });
 
-// Events routes
-route.get("/events", (req, res) => {
-    res.redirect("/events/future");
-});
+// *********** EVENTS ROUTES **********
 
-route.get("/events/future", getFutureEvents);
-route.get("/events/past", getPastEvents);
+// Main unified events page
+route.get("/events", getAllEvents);
+
+// Individual event details
 route.get("/events/:slug", getEventDetails);
 
-// API routes for events
-route.get("/api/events/more", getMoreEvents);
-route.get("/api/events/upcoming", getUpcomingEvents);
+// *********** API ROUTES FOR EVENTS **********
+
+// Main API endpoint for getting events
+route.get("/api/events", getEventsAPI);
+
+// Calendar-specific events API
+route.get("/api/events/calendar", getCalendarEvents);
+
+// *********** OTHER ROUTES **********
 
 route.get("/contact", getContactPage);
 
-// Additional routes
 route.get("/donate", (req, res) => {
     res.render("donate", {
         title: "Donate",
         description: "Support our mission with a donation to MAS Central Indy",
         additionalCSS: ["donate.css"],
         additionalJS: ["donate.js"],
+        stripePublicKey: process.env.STRIPE_PUBLIC_KEY, // Add Stripe public key to template
         layout: "layout"
     });
 });
@@ -88,5 +100,23 @@ route.get("/terms-of-service", (req, res) => {
 // *********** POST requests **********
 route.post("/api/events/:eventId/share", trackEventShare);
 route.post("/contact", submitContactForm);
+
+// *********** DONATION/STRIPE ROUTES **********
+
+// Create payment intent for one-time donation
+route.post("/api/donations/create-payment-intent", createDonationPaymentIntent);
+
+// Create subscription for recurring donations
+route.post("/api/donations/create-subscription", createRecurringDonation);
+
+// Confirm donation payment
+route.post("/api/donations/confirm-payment", confirmDonationPayment);
+
+// Cancel recurring donation
+route.post("/api/donations/cancel-subscription", cancelRecurringDonation);
+
+// Stripe webhook endpoint (should be raw body, not JSON parsed)
+// Note: You'll need to configure express to handle raw body for this specific route
+route.post("/webhooks/stripe", express.raw({type: 'application/json'}), handleStripeWebhook);
 
 module.exports = route
