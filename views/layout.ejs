@@ -24,6 +24,14 @@
             <link rel="stylesheet" href="/css/<%= css %>">
         <% }); %>
     <% } %>
+    <% if (typeof stripePublicKey !== 'undefined' && stripePublicKey) { %>
+        <script>
+            window.STRIPE_CONFIG = {
+                publicKey: '<%= stripePublicKey %>'
+            };
+        </script>
+        <script src="https://js.stripe.com/v3/"></script>
+    <% } %>
 </head>
 <body>
     <!-- Navigation -->

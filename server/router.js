@@ -18,13 +18,8 @@ const {
     cancelRecurringDonation
 } = require("./controllers/stripeController");
 
-const { generalLogger } = require("./generalLogger")
-
-if (process.env.NODE_ENV !== "production") {
-    process.env.STRIPE_PUBLIC_KEY = process.env.STRIPE_PUBLIC_KEY_TEST
-} else {
-    process.env.STRIPE_PUBLIC_KEY = process.env.STRIPE_PUBLIC_KEY_PROD
-}
+const isProd = process.env.NODE_ENV === "production"
+process.env.STRIPE_PUBLIC_KEY = isProd ? process.env.STRIPE_PUBLIC_KEY_PROD : process.env.STRIPE_PUBLIC_KEY_TEST
 
 const route = express.Router()
 
@@ -74,7 +69,7 @@ route.get("/donate", (req, res) => {
         description: "Support our mission with a donation to MAS Central Indy",
         additionalCSS: ["donate.css"],
         additionalJS: ["donate.js"],
-        stripePublicKey: process.env.STRIPE_PUBLIC_KEY, // Add Stripe public key to template
+        stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
         layout: "layout"
     });
 });

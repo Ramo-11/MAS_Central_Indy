@@ -3,14 +3,12 @@ let stripe;
 
 // Show/hide card form functions (defined first)
 function showCardForm() {
-    console.log('showCardForm called'); // Debug line
     const cardFormSection = document.getElementById('cardFormSection');
     if (cardFormSection) {
         cardFormSection.style.display = 'flex';
         cardFormSection.style.alignItems = 'center';
         cardFormSection.style.justifyContent = 'center';
         document.body.style.overflow = 'hidden';
-        console.log('Form should be visible now'); // Debug line
     } else {
         console.error('cardFormSection not found');
     }
@@ -44,13 +42,12 @@ function copyEmail() {
 // Donate Page JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing donate page'); // Debug line
-    
     // Initialize Stripe with public key from server
-    if (window.stripePublicKey) {
-        stripe = Stripe(window.stripePublicKey);
+    if (window.STRIPE_CONFIG && window.STRIPE_CONFIG.publicKey) {
+        stripe = Stripe(window.STRIPE_CONFIG.publicKey);
         console.log('Stripe initialized');
     } else {
-        console.error('Stripe public key not found');
+        console.error('Stripe configuration not found');
         showMessage('Payment system unavailable. Please try again later.', 'error');
         return;
     }
@@ -65,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (showFormBtn) {
         showFormBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('Donate button clicked'); // Debug line
             showCardForm();
         });
     } else {
@@ -193,7 +189,6 @@ function calculateTotal() {
 
 // Handle form submission
 async function handleFormSubmit() {
-    console.log('Form submitted'); // Debug line
     const form = document.getElementById('donationForm');
     
     // Basic validation
