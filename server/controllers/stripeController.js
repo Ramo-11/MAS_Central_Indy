@@ -27,6 +27,7 @@ async function createDonationPaymentIntent(req, res) {
 
         // Validate required fields
         if (!amount || !firstName || !lastName || !email) {
+            generalLogger.error("Missing required fields for donation payment intent")
             return res.status(400).json({ 
                 success: false, 
                 message: "Missing required fields" 
@@ -36,6 +37,7 @@ async function createDonationPaymentIntent(req, res) {
         // Validate amount
         const donationAmount = parseFloat(totalAmount || amount)
         if (donationAmount < 1) {
+            generalLogger.error("Donation amount must be at least $1")
             return res.status(400).json({ 
                 success: false, 
                 message: "Donation amount must be at least $1" 
@@ -99,6 +101,7 @@ async function createRecurringDonation(req, res) {
 
         // Validate required fields
         if (!amount || !firstName || !lastName || !email || !paymentMethodId) {
+            generalLogger.error("Missing required fields for recurring donation")
             return res.status(400).json({ 
                 success: false, 
                 message: "Missing required fields" 
@@ -108,6 +111,7 @@ async function createRecurringDonation(req, res) {
         // Validate amount
         const donationAmount = parseFloat(totalAmount || amount)
         if (donationAmount < 1) {
+            generalLogger.error("Donation amount must be at least $1")
             return res.status(400).json({ 
                 success: false, 
                 message: "Donation amount must be at least $1" 
@@ -222,6 +226,7 @@ async function confirmDonationPayment(req, res) {
         const { paymentIntentId } = req.body
 
         if (!paymentIntentId) {
+            generalLogger.error("Payment intent ID is required to confirm donation")
             return res.status(400).json({ 
                 success: false, 
                 message: "Payment intent ID is required" 
@@ -249,6 +254,7 @@ async function confirmDonationPayment(req, res) {
                 donorName: metadata.donorName
             })
         } else {
+            generalLogger.error(`Payment intent not completed: ${paymentIntentId}, Status: ${paymentIntent.status}`)
             res.status(400).json({ 
                 success: false, 
                 message: "Payment not completed" 
@@ -266,13 +272,16 @@ async function confirmDonationPayment(req, res) {
 
 // Handle Stripe webhooks
 async function handleStripeWebhook(req, res) {
+    generalLogger.debug("Received Stripe webhook event")
     const sig = req.headers['stripe-signature']
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
 
     let event
 
     try {
+        generalLogger.debug("Verifying Stripe webhook signature")
         event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
+        generalLogger.info(`Webhook signature verified successfully for event type: ${event.type}`)
     } catch (err) {
         generalLogger.error(`Webhook signature verification failed: ${err.message}`)
         return res.status(400).send(`Webhook Error: ${err.message}`)
