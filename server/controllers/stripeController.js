@@ -203,7 +203,7 @@ const sendDonationEmails = async (donationData, paymentIntent) => {
                                 📧 mascentralindy@gmail.com
                             </p>
                             <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 14px;">
-                                📞 (555) 123-4567
+                                📞 (917) 957-6104
                             </p>
                             <p style="margin: 0; color: #6b7280; font-size: 14px;">
                                 📍 123 Community Drive, Indianapolis, IN 46240

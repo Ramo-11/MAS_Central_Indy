@@ -171,7 +171,7 @@ const submitContactForm = async (req, res) => {
                     
                     <p style="margin: 20px 0; color: #374151; line-height: 1.6;">
                         If you have any urgent questions, please don't hesitate to call us at 
-                        <a href="tel:+15551234567" style="color: #0f4f9f; text-decoration: none;">(555) 123-4567</a>.
+                        <a href="tel:+15551234567" style="color: #0f4f9f; text-decoration: none;">(917) 957-6104</a>.
                     </p>
                     
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
@@ -182,7 +182,7 @@ const submitContactForm = async (req, res) => {
                             📧 mascentralindy@gmail.com
                         </p>
                         <p style="margin: 0 0 5px 0; color: #6b7280; font-size: 14px;">
-                            📞 (555) 123-4567
+                            📞 (917) 957-6104
                         </p>
                         <p style="margin: 0; color: #6b7280; font-size: 14px;">
                             📍 123 Community Drive, Indianapolis, IN 46240
