@@ -115,8 +115,7 @@ route.post("/api/donations/confirm-payment", confirmDonationPayment);
 // Cancel recurring donation
 route.post("/api/donations/cancel-subscription", cancelRecurringDonation);
 
-// Stripe webhook endpoint (should be raw body, not JSON parsed)
-// Note: You'll need to configure express to handle raw body for this specific route
-route.post("/webhooks/stripe", express.raw({type: 'application/json'}), handleStripeWebhook);
+// Stripe webhook endpoint (raw body is handled in main app.js)
+route.post("/webhooks/stripe", handleStripeWebhook);
 
 module.exports = route

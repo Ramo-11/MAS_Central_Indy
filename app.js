@@ -21,6 +21,11 @@ app.use(expressLayouts);
 app.set('layout', 'layout');
 app.set('layout extractScripts', true);
 app.set('layout extractStyles', true);
+
+// IMPORTANT: Stripe webhook needs raw body, so handle it BEFORE other body parsers
+app.use('/webhooks/stripe', express.raw({type: 'application/json'}));
+
+// Now add the regular body parsers for all other routes
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.json())
