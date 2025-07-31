@@ -1,3 +1,6 @@
+// Initialize Stripe
+let stripe;
+
 // Show/hide card form functions (defined first)
 function showCardForm() {
     console.log('showCardForm called'); // Debug line
@@ -41,6 +44,17 @@ function copyEmail() {
 // Donate Page JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing donate page'); // Debug line
+    
+    // Initialize Stripe with public key from server
+    if (window.stripePublicKey) {
+        stripe = Stripe(window.stripePublicKey);
+        console.log('Stripe initialized');
+    } else {
+        console.error('Stripe public key not found');
+        showMessage('Payment system unavailable. Please try again later.', 'error');
+        return;
+    }
+    
     initializeDonationForm();
     initializeAmountButtons();
     initializeCardFormatting();
@@ -67,23 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-// Copy email to clipboard
-function copyEmail() {
-    const email = 'mascentralindy@gmail.com';
-    navigator.clipboard.writeText(email).then(() => {
-        showMessage('Email copied to clipboard!', 'success');
-    }).catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = email;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showMessage('Email copied to clipboard!', 'success');
-    });
-}
 
 // Initialize donation form
 function initializeDonationForm() {
@@ -196,8 +193,8 @@ function calculateTotal() {
 
 // Handle form submission
 async function handleFormSubmit() {
+    console.log('Form submitted'); // Debug line
     const form = document.getElementById('donationForm');
-    const submitBtn = document.getElementById('submitBtn');
     
     // Basic validation
     if (!validateForm()) {
@@ -210,7 +207,7 @@ async function handleFormSubmit() {
     try {
         // Collect form data
         const formData = new FormData(form);
-        const data = {
+        const donationData = {
             amount: formData.get('amount'),
             recurring: formData.get('recurring') === 'on',
             purpose: formData.get('purpose'),
@@ -218,49 +215,205 @@ async function handleFormSubmit() {
             firstName: formData.get('firstName'),
             lastName: formData.get('lastName'),
             email: formData.get('email'),
-            cardNumber: formData.get('cardNumber').replace(/\s/g, ''),
-            expiry: formData.get('expiry'),
-            cvv: formData.get('cvv'),
             message: formData.get('message')
         };
         
         // Calculate total amount
-        const baseAmount = parseFloat(data.amount);
-        const feeAmount = data.coverFees ? baseAmount * 0.025 : 0;
-        data.totalAmount = baseAmount + feeAmount;
+        const baseAmount = parseFloat(donationData.amount);
+        const feeAmount = donationData.coverFees ? baseAmount * 0.025 : 0;
+        donationData.totalAmount = baseAmount + feeAmount;
         
-        console.log('Donation data to send to backend:', data);
+        console.log('Donation data to send to backend:', donationData);
         
-        // TODO: Replace with actual API call
-        // const response = await fetch('/donate', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify(data)
-        // });
-        
-        // Simulate API call for now
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Show success message
-        showMessage('Thank you for your donation! You will receive a confirmation email shortly.', 'success');
-        
-        // Reset form and hide modal
-        form.reset();
-        hideCardForm();
-        
-        // Reset amount buttons
-        document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('customAmount').classList.remove('show');
-        document.getElementById('feeInfo').style.display = 'none';
+        if (donationData.recurring) {
+            // Handle recurring donation
+            await handleRecurringDonation(donationData, formData);
+        } else {
+            // Handle one-time donation
+            await handleOneTimeDonation(donationData);
+        }
         
     } catch (error) {
         console.error('Donation error:', error);
         showMessage('Sorry, there was an error processing your donation. Please try again.', 'error');
+        setSubmitButtonLoading(false);
+    }
+}
+
+// Handle one-time donation
+async function handleOneTimeDonation(donationData) {
+    try {
+        // Create payment intent
+        const response = await fetch('/api/donations/create-payment-intent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(donationData)
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to create payment intent');
+        }
+        
+        console.log('Payment intent created:', result.paymentIntentId);
+        
+        // Get card data
+        const cardData = getCardData();
+        
+        // Confirm payment with Stripe
+        const { error, paymentIntent } = await stripe.confirmCardPayment(result.clientSecret, {
+            payment_method: {
+                card: {
+                    number: cardData.number,
+                    exp_month: cardData.exp_month,
+                    exp_year: cardData.exp_year,
+                    cvc: cardData.cvc,
+                },
+                billing_details: {
+                    name: `${donationData.firstName} ${donationData.lastName}`,
+                    email: donationData.email,
+                }
+            }
+        });
+        
+        if (error) {
+            console.error('Payment failed:', error);
+            showMessage(error.message || 'Payment failed. Please try again.', 'error');
+            setSubmitButtonLoading(false);
+            return;
+        }
+        
+        if (paymentIntent.status === 'succeeded') {
+            // Confirm payment on server
+            await fetch('/api/donations/confirm-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    paymentIntentId: paymentIntent.id
+                })
+            });
+            
+            // Show success message
+            showMessage('Thank you for your donation! You will receive a confirmation email shortly.', 'success');
+            
+            // Reset form and hide modal
+            resetFormAndModal();
+        }
+        
+    } catch (error) {
+        throw error;
     } finally {
         setSubmitButtonLoading(false);
     }
+}
+
+// Handle recurring donation
+async function handleRecurringDonation(donationData, formData) {
+    try {
+        // Create payment method first
+        const cardData = getCardData();
+        
+        const { error, paymentMethod } = await stripe.createPaymentMethod({
+            type: 'card',
+            card: {
+                number: cardData.number,
+                exp_month: cardData.exp_month,
+                exp_year: cardData.exp_year,
+                cvc: cardData.cvc,
+            },
+            billing_details: {
+                name: `${donationData.firstName} ${donationData.lastName}`,
+                email: donationData.email,
+            },
+        });
+        
+        if (error) {
+            console.error('Payment method creation failed:', error);
+            showMessage(error.message || 'Failed to set up payment method. Please try again.', 'error');
+            setSubmitButtonLoading(false);
+            return;
+        }
+        
+        console.log('Payment method created:', paymentMethod.id);
+        
+        // Create subscription
+        const subscriptionData = {
+            ...donationData,
+            paymentMethodId: paymentMethod.id
+        };
+        
+        const response = await fetch('/api/donations/create-subscription', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(subscriptionData)
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to create subscription');
+        }
+        
+        console.log('Subscription created:', result.subscriptionId);
+        
+        // Handle potential 3D Secure authentication
+        if (result.clientSecret) {
+            const { error: confirmError } = await stripe.confirmCardPayment(result.clientSecret);
+            
+            if (confirmError) {
+                console.error('Subscription payment failed:', confirmError);
+                showMessage(confirmError.message || 'Subscription setup failed. Please try again.', 'error');
+                setSubmitButtonLoading(false);
+                return;
+            }
+        }
+        
+        // Show success message
+        showMessage('Thank you for setting up a recurring donation! You will receive a confirmation email shortly.', 'success');
+        
+        // Reset form and hide modal
+        resetFormAndModal();
+        
+    } catch (error) {
+        throw error;
+    } finally {
+        setSubmitButtonLoading(false);
+    }
+}
+
+// Get card data from form
+function getCardData() {
+    const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+    const expiry = document.getElementById('expiry').value;
+    const cvv = document.getElementById('cvv').value;
+    
+    const [exp_month, exp_year] = expiry.split('/');
+    
+    return {
+        number: cardNumber,
+        exp_month: parseInt(exp_month, 10),
+        exp_year: parseInt('20' + exp_year, 10), // Convert YY to YYYY
+        cvc: cvv
+    };
+}
+
+// Reset form and modal
+function resetFormAndModal() {
+    const form = document.getElementById('donationForm');
+    form.reset();
+    hideCardForm();
+    
+    // Reset amount buttons
+    document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('customAmount').classList.remove('show');
+    document.getElementById('feeInfo').style.display = 'none';
 }
 
 // Form validation
@@ -317,6 +470,16 @@ function validateForm() {
     if (!/^\d{2}\/\d{2}$/.test(expiry)) {
         document.getElementById('expiry').style.borderColor = '#dc2626';
         showMessage('Please enter a valid expiry date (MM/YY).', 'error');
+        return false;
+    }
+    
+    // Check if expiry date is in the future
+    const [month, year] = expiry.split('/');
+    const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
+    const now = new Date();
+    if (expiryDate < now) {
+        document.getElementById('expiry').style.borderColor = '#dc2626';
+        showMessage('Card has expired. Please use a valid card.', 'error');
         return false;
     }
     
@@ -380,8 +543,8 @@ document.addEventListener('click', function(e) {
     const cardFormSection = document.getElementById('cardFormSection');
     const formContainer = document.querySelector('.form-container');
     
-    if (cardFormSection.style.display === 'block' && 
-        !formContainer.contains(e.target) && 
+    if (cardFormSection && cardFormSection.style.display === 'flex' && 
+        formContainer && !formContainer.contains(e.target) && 
         e.target !== cardFormSection) {
         hideCardForm();
     }
@@ -391,7 +554,7 @@ document.addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         const cardFormSection = document.getElementById('cardFormSection');
-        if (cardFormSection.style.display === 'block') {
+        if (cardFormSection && cardFormSection.style.display === 'flex') {
             hideCardForm();
         }
     }
