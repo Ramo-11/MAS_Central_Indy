@@ -12,10 +12,7 @@ const { getContactPage, submitContactForm } = require("./controllers/contactCont
 
 const { 
     createDonationPaymentIntent,
-    createRecurringDonation,
-    confirmDonationPayment,
-    handleStripeWebhook,
-    cancelRecurringDonation
+    confirmDonationPayment
 } = require("./controllers/stripeController");
 
 const isProd = process.env.NODE_ENV === "production"
@@ -101,16 +98,7 @@ route.post("/contact", submitContactForm);
 // Create payment intent for one-time donation
 route.post("/api/donations/create-payment-intent", createDonationPaymentIntent);
 
-// Create subscription for recurring donations
-route.post("/api/donations/create-subscription", createRecurringDonation);
-
 // Confirm donation payment
 route.post("/api/donations/confirm-payment", confirmDonationPayment);
-
-// Cancel recurring donation
-route.post("/api/donations/cancel-subscription", cancelRecurringDonation);
-
-// Stripe webhook endpoint (raw body is handled in main app.js)
-route.post("/webhooks/stripe", handleStripeWebhook);
 
 module.exports = route

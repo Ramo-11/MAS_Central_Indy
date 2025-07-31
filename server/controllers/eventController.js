@@ -101,8 +101,6 @@ const getEventsAPI = async (req, res) => {
             events = eventResults || [];
             totalEvents = countResults || 0;
 
-            generalLogger.info(`Fetched ${events.length} events for period: ${period}, category: ${category}, page: ${page}`);
-
         } catch (dbError) {
             generalLogger.error(`Database query error in getEventsAPI: ${dbError.message}`);
             // Continue with empty arrays to avoid breaking the API
@@ -201,8 +199,6 @@ const getCalendarEvents = async (req, res) => {
 
 // Get single event details
 const getEventDetails = async (req, res) => {
-
-    generalLogger.info(`Fetching details for event with slug: ${req.params.slug}`);
     try {
         const { slug } = req.params;
         

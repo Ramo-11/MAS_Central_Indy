@@ -173,28 +173,30 @@ class EventsManager {
     }
 
     async loadCalendarEvents() {
-        try {
-            const params = new URLSearchParams({
-                month: this.currentMonth,
-                year: this.currentYear,
-                category: this.currentCategory
-            });
+    try {
+        const params = new URLSearchParams({
+            month: this.currentMonth,
+            year: this.currentYear,
+            category: this.currentCategory
+        });
 
-            const response = await fetch(`/api/events/calendar?${params}`);
-            const data = await response.json();
+        const response = await fetch(`/api/events/calendar?${params}`);
+        const data = await response.json();
 
-            if (data.success) {
-                this.events = data.events;
-                this.renderCalendar();
-            } else {
-                this.showError('Failed to load calendar events');
-            }
-        } catch (error) {
-            console.error('Error loading calendar events:', error);
+        if (data.success) {
+            // Store calendar events separately to avoid interference with grid events
+            this.calendarEvents = data.events;
+            return Promise.resolve();
+        } else {
             this.showError('Failed to load calendar events');
+            return Promise.reject(new Error('Failed to load calendar events'));
         }
+    } catch (error) {
+        console.error('Error loading calendar events:', error);
+        this.showError('Failed to load calendar events');
+        return Promise.reject(error);
     }
-
+}
     renderEvents() {
         const grid = document.getElementById('eventsGrid');
         const noEvents = document.getElementById('noEvents');
@@ -419,89 +421,89 @@ class EventsManager {
         // Load events for current month before rendering calendar
         this.loadCalendarEvents().then(() => {
             this.renderCalendarGrid();
+        }).catch(() => {
+            // Still render calendar even if events fail to load
+            this.renderCalendarGrid();
         });
     }
 
     renderCalendarGrid() {
-        const grid = document.getElementById('calendarGrid');
-        if (!grid) return;
+    const grid = document.getElementById('calendarGrid');
+    if (!grid) return;
 
-        const firstDay = new Date(this.currentYear, this.currentMonth, 1);
-        const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
-        const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
+    const firstDay = new Date(this.currentYear, this.currentMonth, 1);
+    const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    let calendarHTML = `
+        <div class="calendar-header-row">
+            <div class="calendar-header-cell">Sun</div>
+            <div class="calendar-header-cell">Mon</div>
+            <div class="calendar-header-cell">Tue</div>
+            <div class="calendar-header-cell">Wed</div>
+            <div class="calendar-header-cell">Thu</div>
+            <div class="calendar-header-cell">Fri</div>
+            <div class="calendar-header-cell">Sat</div>
+        </div>
+        <div class="calendar-body">
+    `;
+    
+    const currentDate = new Date(startDate);
+    const today = new Date();
+    
+    for (let i = 0; i < 42; i++) {
+        const isCurrentMonth = currentDate.getMonth() === this.currentMonth;
+        const isToday = currentDate.toDateString() === today.toDateString();
+        const dayEvents = this.getEventsForDate(currentDate);
         
-        let calendarHTML = `
-            <div class="calendar-header-row">
-                <div class="calendar-header-cell">Sun</div>
-                <div class="calendar-header-cell">Mon</div>
-                <div class="calendar-header-cell">Tue</div>
-                <div class="calendar-header-cell">Wed</div>
-                <div class="calendar-header-cell">Thu</div>
-                <div class="calendar-header-cell">Fri</div>
-                <div class="calendar-header-cell">Sat</div>
+        calendarHTML += `
+            <div class="calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}">
+                <div class="calendar-day-number">${currentDate.getDate()}</div>
+                <div class="calendar-events">
+                    ${dayEvents.slice(0, 3).map(event => `
+                        <div class="calendar-event ${this.isEventPast(event) ? 'past' : ''}" 
+                             data-event-slug="${event.slug}" 
+                             title="${event.title}">
+                            ${event.title.length > 15 ? event.title.substring(0, 15) + '...' : event.title}
+                        </div>
+                    `).join('')}
+                    ${dayEvents.length > 3 ? `<div class="calendar-event-more">+${dayEvents.length - 3} more</div>` : ''}
+                </div>
             </div>
-            <div class="calendar-body">
         `;
         
-        const currentDate = new Date(startDate);
-        const today = new Date();
-        
-        for (let i = 0; i < 42; i++) {
-            const isCurrentMonth = currentDate.getMonth() === this.currentMonth;
-            const isToday = currentDate.toDateString() === today.toDateString();
-            const dayEvents = this.getEventsForDate(currentDate);
-            
-            calendarHTML += `
-                <div class="calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}">
-                    <div class="calendar-day-number">${currentDate.getDate()}</div>
-                    <div class="calendar-events">
-                        ${dayEvents.map(event => `
-                            <div class="calendar-event ${this.isEventPast(event) ? 'past' : ''}" 
-                                 data-event-id="${event._id}" 
-                                 title="${event.title}">
-                                ${event.title}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-        
-        calendarHTML += '</div>';
-        grid.innerHTML = calendarHTML;
-        
-        // Bind calendar event clicks with proper event delegation
-        // Remove any existing delegated listeners first
-        grid.removeEventListener('click', this.calendarClickHandler);
-        
-        // Create and store the event handler
-        this.calendarClickHandler = (e) => {
-            const calendarEvent = e.target.closest('.calendar-event');
-            if (calendarEvent) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const eventId = calendarEvent.dataset.eventId;
-                const event = this.events.find(e => e._id === eventId);
-                
-                if (event && event.slug) {
-                    const url = `/events/${event.slug}`;
-                    console.log('Opening event:', url); // Debug log
-                    window.open(url, '_blank');
-                }
-            }
-        };
-        
-        // Add the delegated event listener to the grid
-        grid.addEventListener('click', this.calendarClickHandler, true);
+        currentDate.setDate(currentDate.getDate() + 1);
     }
+    
+    calendarHTML += '</div>';
+    grid.innerHTML = calendarHTML;
+    
+    // Remove any existing event listeners
+    if (this.calendarClickHandler) {
+        grid.removeEventListener('click', this.calendarClickHandler);
+    }
+    
+    // Create new event handler
+    this.calendarClickHandler = (e) => {
+        const calendarEvent = e.target.closest('.calendar-event');
+        if (calendarEvent && calendarEvent.dataset.eventSlug) {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = `/events/${calendarEvent.dataset.eventSlug}`;
+            window.open(url, '_blank');
+        }
+    };
+    
+    // Add the event listener
+    grid.addEventListener('click', this.calendarClickHandler, true);
+}
 
     getEventsForDate(date) {
         const dateString = date.toISOString().split('T')[0];
-        return this.events.filter(event => {
+        // Use calendarEvents instead of events for calendar view
+        const eventsToCheck = this.calendarEvents || this.events;
+        return eventsToCheck.filter(event => {
             const eventDate = new Date(event.eventDate).toISOString().split('T')[0];
             return eventDate === dateString;
         });

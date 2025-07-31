@@ -251,7 +251,6 @@ const eventSchema = new mongoose.Schema({
 // Indexes for better query performance
 eventSchema.index({ startDate: 1, status: 1 });
 eventSchema.index({ category: 1, status: 1 });
-eventSchema.index({ slug: 1 });
 eventSchema.index({ featured: 1, startDate: 1 });
 eventSchema.index({ 'location.coordinates': '2dsphere' });
 eventSchema.index({ tags: 1 });

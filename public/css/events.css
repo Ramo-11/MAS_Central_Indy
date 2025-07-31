@@ -73,6 +73,17 @@
     display: none;
 }
 
+.calendar-event-more {
+    background: var(--gray-400);
+    color: var(--white);
+    padding: 2px 4px;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+    margin-top: 2px;
+}
+
 /* View Controls */
 .view-controls {
     display: flex;

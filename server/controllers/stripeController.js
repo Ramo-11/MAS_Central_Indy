@@ -15,9 +15,9 @@ async function createDonationPaymentIntent(req, res) {
     try {
         const { 
             amount, 
-            recurring, 
             purpose, 
             coverFees, 
+            anonymous,
             firstName, 
             lastName, 
             email, 
@@ -26,11 +26,11 @@ async function createDonationPaymentIntent(req, res) {
         } = req.body
 
         // Validate required fields
-        if (!amount || !firstName || !lastName || !email) {
-            generalLogger.error("Missing required fields for donation payment intent")
+        if (!amount) {
+            generalLogger.error("Missing amount for donation payment intent")
             return res.status(400).json({ 
                 success: false, 
-                message: "Missing required fields" 
+                message: "Donation amount is required" 
             })
         }
 
@@ -52,22 +52,22 @@ async function createDonationPaymentIntent(req, res) {
             amount: amountInCents,
             currency: 'usd',
             metadata: {
-                donorName: `${firstName} ${lastName}`,
-                donorEmail: email,
+                donorName: anonymous ? 'Anonymous' : `${firstName || ''} ${lastName || ''}`.trim() || 'Not provided',
+                donorEmail: email || 'not provided',
                 purpose: purpose || 'general',
-                recurring: recurring ? 'yes' : 'no',
                 coverFees: coverFees ? 'yes' : 'no',
                 originalAmount: amount.toString(),
-                message: message || ''
+                message: message || '',
+                anonymous: anonymous ? 'yes' : 'no'
             },
             automatic_payment_methods: {
                 enabled: true,
             },
-            description: `Donation from ${firstName} ${lastName} (${email})`,
-            receipt_email: email,
+            description: anonymous ? 'Anonymous donation' : `Donation from ${firstName && lastName ? `${firstName} ${lastName}` : 'donor'}${email ? ` (${email})` : ''}`,
+            receipt_email: anonymous ? undefined : email,
         })
 
-        generalLogger.info(`Payment intent created for donation: ${paymentIntent.id}, Amount: $${donationAmount}, Donor: ${firstName} ${lastName}`)
+        generalLogger.info(`Payment intent created for donation: ${paymentIntent.id}, Amount: $${donationAmount}, Donor: ${anonymous ? 'Anonymous' : (firstName && lastName ? `${firstName} ${lastName}` : 'Not provided')}`)
         
         res.json({
             success: true,
@@ -76,146 +76,10 @@ async function createDonationPaymentIntent(req, res) {
         })
 
     } catch (error) {
-        generalLogger.error(`Error creating donation payment intent: ${error.message}`)
+        generalLogger.error(`Error creating donation paymentintent: ${error.message}`)
         res.status(500).json({ 
             success: false, 
             message: "Unable to process donation. Please try again." 
-        })
-    }
-}
-
-// Create subscription for recurring donations
-async function createRecurringDonation(req, res) {
-    try {
-        const { 
-            amount, 
-            purpose, 
-            coverFees, 
-            firstName, 
-            lastName, 
-            email, 
-            message,
-            totalAmount,
-            paymentMethodId
-        } = req.body
-
-        // Validate required fields
-        if (!amount || !firstName || !lastName || !email || !paymentMethodId) {
-            generalLogger.error("Missing required fields for recurring donation")
-            return res.status(400).json({ 
-                success: false, 
-                message: "Missing required fields" 
-            })
-        }
-
-        // Validate amount
-        const donationAmount = parseFloat(totalAmount || amount)
-        if (donationAmount < 1) {
-            generalLogger.error("Donation amount must be at least $1")
-            return res.status(400).json({ 
-                success: false, 
-                message: "Donation amount must be at least $1" 
-            })
-        }
-
-        // Convert to cents for Stripe
-        const amountInCents = Math.round(donationAmount * 100)
-
-        // Create or retrieve customer
-        let customer
-        const existingCustomers = await stripe.customers.list({
-            email: email,
-            limit: 1
-        })
-
-        if (existingCustomers.data.length > 0) {
-            customer = existingCustomers.data[0]
-            generalLogger.info(`Using existing customer: ${customer.id} for ${email}`)
-        } else {
-            customer = await stripe.customers.create({
-                email: email,
-                name: `${firstName} ${lastName}`,
-                metadata: {
-                    firstName: firstName,
-                    lastName: lastName,
-                    purpose: purpose || 'general'
-                }
-            })
-            generalLogger.info(`Created new customer: ${customer.id} for ${email}`)
-        }
-
-        // Attach payment method to customer
-        await stripe.paymentMethods.attach(paymentMethodId, {
-            customer: customer.id,
-        })
-
-        // Set as default payment method
-        await stripe.customers.update(customer.id, {
-            invoice_settings: {
-                default_payment_method: paymentMethodId,
-            },
-        })
-
-        // Create product for this donation purpose
-        const productName = purpose && purpose !== 'general' 
-            ? `Monthly Donation - ${purpose.charAt(0).toUpperCase() + purpose.slice(1).replace('-', ' ')}`
-            : 'Monthly Donation - General Fund'
-
-        const product = await stripe.products.create({
-            name: productName,
-            metadata: {
-                type: 'recurring_donation',
-                purpose: purpose || 'general'
-            }
-        })
-
-        // Create price for the product
-        const price = await stripe.prices.create({
-            unit_amount: amountInCents,
-            currency: 'usd',
-            recurring: {
-                interval: 'month',
-            },
-            product: product.id,
-            metadata: {
-                donorName: `${firstName} ${lastName}`,
-                purpose: purpose || 'general',
-                coverFees: coverFees ? 'yes' : 'no',
-                originalAmount: amount.toString()
-            }
-        })
-
-        // Create subscription
-        const subscription = await stripe.subscriptions.create({
-            customer: customer.id,
-            items: [{
-                price: price.id,
-            }],
-            default_payment_method: paymentMethodId,
-            metadata: {
-                donorName: `${firstName} ${lastName}`,
-                donorEmail: email,
-                purpose: purpose || 'general',
-                coverFees: coverFees ? 'yes' : 'no',
-                originalAmount: amount.toString(),
-                message: message || ''
-            },
-            expand: ['latest_invoice.payment_intent'],
-        })
-
-        generalLogger.info(`Recurring donation subscription created: ${subscription.id}, Amount: $${donationAmount}/month, Donor: ${firstName} ${lastName}`)
-        
-        res.json({
-            success: true,
-            subscriptionId: subscription.id,
-            clientSecret: subscription.latest_invoice.payment_intent.client_secret
-        })
-
-    } catch (error) {
-        generalLogger.error(`Error creating recurring donation: ${error.message}`)
-        res.status(500).json({ 
-            success: false, 
-            message: "Unable to set up recurring donation. Please try again." 
         })
     }
 }
@@ -270,95 +134,7 @@ async function confirmDonationPayment(req, res) {
     }
 }
 
-// Handle Stripe webhooks
-async function handleStripeWebhook(req, res) {
-    generalLogger.debug("Received Stripe webhook event")
-    const sig = req.headers['stripe-signature']
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
-
-    let event
-
-    try {
-        generalLogger.debug("Verifying Stripe webhook signature")
-        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
-        generalLogger.info(`Webhook signature verified successfully for event type: ${event.type}`)
-    } catch (err) {
-        generalLogger.error(`Webhook signature verification failed: ${err.message}`)
-        return res.status(400).send(`Webhook Error: ${err.message}`)
-    }
-
-    // Handle the event
-    switch (event.type) {
-        case 'payment_intent.succeeded':
-            const paymentIntent = event.data.object
-            generalLogger.info(`Donation payment succeeded via webhook: ${paymentIntent.id}`)
-            // Handle successful one-time donation
-            break
-            
-        case 'invoice.payment_succeeded':
-            const invoice = event.data.object
-            if (invoice.subscription) {
-                generalLogger.info(`Recurring donation payment succeeded: ${invoice.subscription}`)
-                // Handle successful recurring donation payment
-            }
-            break
-            
-        case 'invoice.payment_failed':
-            const failedInvoice = event.data.object
-            if (failedInvoice.subscription) {
-                generalLogger.error(`Recurring donation payment failed: ${failedInvoice.subscription}`)
-                // Handle failed recurring donation payment
-                // You might want to notify the donor or retry
-            }
-            break
-            
-        case 'customer.subscription.deleted':
-            const deletedSubscription = event.data.object
-            generalLogger.info(`Recurring donation cancelled: ${deletedSubscription.id}`)
-            // Handle subscription cancellation
-            break
-            
-        default:
-            generalLogger.info(`Unhandled event type: ${event.type}`)
-    }
-
-    res.json({ received: true })
-}
-
-// Cancel recurring donation
-async function cancelRecurringDonation(req, res) {
-    try {
-        const { subscriptionId } = req.body
-
-        if (!subscriptionId) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Subscription ID is required" 
-            })
-        }
-
-        const subscription = await stripe.subscriptions.cancel(subscriptionId)
-        
-        generalLogger.info(`Recurring donation cancelled: ${subscriptionId}`)
-        
-        res.json({
-            success: true,
-            message: "Recurring donation cancelled successfully"
-        })
-
-    } catch (error) {
-        generalLogger.error(`Error cancelling recurring donation: ${error.message}`)
-        res.status(500).json({ 
-            success: false, 
-            message: "Unable to cancel recurring donation" 
-        })
-    }
-}
-
 module.exports = {
     createDonationPaymentIntent,
-    createRecurringDonation,
-    confirmDonationPayment,
-    handleStripeWebhook,
-    cancelRecurringDonation
+    confirmDonationPayment
 }

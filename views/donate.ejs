@@ -73,14 +73,6 @@
                     <input type="number" id="customAmount" name="amount" class="form-input amount-input" placeholder="Enter custom amount" min="1" step="0.01">
                 </div>
 
-                <!-- Recurring Toggle -->
-                <div class="form-group">
-                    <div class="toggle-container">
-                        <input type="checkbox" id="recurring" name="recurring" class="toggle-checkbox">
-                        <label for="recurring" class="toggle-label">Make this a recurring monthly donation</label>
-                    </div>
-                </div>
-
                 <!-- Donation Purpose -->
                 <div class="form-group">
                     <label for="purpose" class="form-label">Donation Purpose (Optional)</label>
@@ -101,7 +93,7 @@
                 <div class="form-group">
                     <div class="toggle-container">
                         <input type="checkbox" id="coverFees" name="coverFees" class="toggle-checkbox">
-                        <label for="coverFees" class="toggle-label">Add 2.50% to cover processing fees</label>
+                        <label for="coverFees" class="toggle-label">Add 2.9% + $0.30 to cover processing fees</label>
                     </div>
                     <div class="fee-info" id="feeInfo" style="display: none;">
                         <p>Processing fee: $<span id="feeAmount">0.00</span></p>
@@ -112,35 +104,36 @@
                 <!-- Personal Information -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="firstName" class="form-label">First Name *</label>
-                        <input type="text" id="firstName" name="firstName" class="form-input" required>
+                        <label for="firstName" class="form-label">First Name</label>
+                        <input type="text" id="firstName" name="firstName" class="form-input">
                     </div>
                     <div class="form-group">
-                        <label for="lastName" class="form-label">Last Name *</label>
-                        <input type="text" id="lastName" name="lastName" class="form-input" required>
+                        <label for="lastName" class="form-label">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" class="form-input">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="email" class="form-label">Email Address *</label>
-                    <input type="email" id="email" name="email" class="form-input" required>
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <div class="toggle-container">
+                        <input type="checkbox" id="anonymous" name="anonymous" class="toggle-checkbox">
+                        <label for="anonymous" class="toggle-label">Donate anonymously</label>
+                    </div>
                 </div>
 
                 <!-- Card Information -->
                 <div class="form-group">
-                    <label for="cardNumber" class="form-label">Card Number *</label>
-                    <input type="text" id="cardNumber" name="cardNumber" class="form-input" placeholder="1234 5678 9012 3456" required>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="expiry" class="form-label">Expiry Date *</label>
-                        <input type="text" id="expiry" name="expiry" class="form-input" placeholder="MM/YY" required>
+                    <label for="card-element" class="form-label">Card Information *</label>
+                    <!-- Stripe Elements will create form elements here -->
+                    <div id="card-element" class="form-input">
+                        <!-- Stripe Elements will inject the card input here -->
                     </div>
-                    <div class="form-group">
-                        <label for="cvv" class="form-label">CVV *</label>
-                        <input type="text" id="cvv" name="cvv" class="form-input" placeholder="123" required>
-                    </div>
+                    <!-- Error messages will be displayed here -->
+                    <div id="card-errors" role="alert" style="color: #9e2146; margin-top: 8px; font-size: 14px;"></div>
                 </div>
 
                 <!-- Optional Message -->
