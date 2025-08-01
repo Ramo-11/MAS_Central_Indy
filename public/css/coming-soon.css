@@ -1,0 +1,136 @@
+/* Coming Soon Page Styles */
+
+.coming-soon-hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--white);
+    min-height: calc(100vh - 140px); /* Adjust based on header/footer height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--spacing-3xl) 0;
+}
+
+.coming-soon-content {
+    max-width: 600px;
+    margin: 0 auto;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.coming-soon-icon {
+    margin-bottom: var(--spacing-2xl);
+    opacity: 0.9;
+}
+
+.coming-soon-icon svg {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.coming-soon-title {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--white);
+    margin-bottom: var(--spacing-lg);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.coming-soon-subtitle {
+    font-size: var(--font-size-lg);
+    opacity: 0.9;
+    line-height: 1.6;
+    margin-bottom: var(--spacing-2xl);
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.coming-soon-actions {
+    margin-top: var(--spacing-2xl);
+}
+
+.coming-soon-actions .btn {
+    box-shadow: var(--shadow-lg);
+    background-color: var(--white);
+    color: var(--primary-color);
+    border-color: var(--white);
+    font-weight: var(--font-weight-semibold);
+}
+
+.coming-soon-actions .btn:hover {
+    background-color: var(--gray-100);
+    color: var(--primary-dark);
+    border-color: var(--gray-100);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.9;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 767px) {
+    .coming-soon-hero {
+        min-height: calc(100vh - 120px);
+        padding: var(--spacing-2xl) 0;
+    }
+    
+    .coming-soon-title {
+        font-size: var(--font-size-3xl);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .coming-soon-subtitle {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .coming-soon-icon {
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .coming-soon-icon svg {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media (max-width: 575px) {
+    .coming-soon-title {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .coming-soon-subtitle {
+        font-size: var(--font-size-sm);
+        padding: 0 var(--spacing-md);
+    }
+    
+    .coming-soon-actions .btn {
+        width: 100%;
+        max-width: 280px;
+    }
+    
+    .coming-soon-icon svg {
+        width: 50px;
+        height: 50px;
+    }
+}
