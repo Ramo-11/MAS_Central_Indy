@@ -205,7 +205,8 @@ function formatDate(date) {
         const options = { 
             year: 'numeric', 
             month: 'long', 
-            day: 'numeric' 
+            day: 'numeric',
+            timeZone: 'America/Indiana/Indianapolis'
         };
         return new Date(date).toLocaleDateString('en-US', options);
     } catch (error) {

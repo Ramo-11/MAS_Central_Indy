@@ -91,6 +91,7 @@ const getEventsAPI = async (req, res) => {
             // Execute database queries
             const [eventResults, countResults] = await Promise.all([
                 Event.find(query)
+                    .select('title slug description shortDescription category eventType status eventDate startTime endTime timezone location speakers media registration tags featured analytics isPublic')
                     .sort(sortOrder)
                     .skip(skip)
                     .limit(parseInt(limit))
@@ -179,6 +180,7 @@ const getCalendarEvents = async (req, res) => {
         }
 
         const events = await Event.find(query)
+            .select('title slug description shortDescription category eventType status eventDate startTime endTime timezone location speakers media registration tags featured analytics isPublic')
             .sort({ eventDate: 1 })
             .limit(100) // Limit to avoid too much data
             .lean();

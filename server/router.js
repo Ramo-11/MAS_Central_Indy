@@ -60,25 +60,25 @@ route.get("/api/events/calendar", getCalendarEvents);
 
 route.get("/contact", getContactPage);
 
-// route.get("/donate", (req, res) => {
-//     res.render("donate", {
-//         title: "Donate",
-//         description: "Support our mission with a donation to MAS Central Indy",
-//         additionalCSS: ["donate.css"],
-//         additionalJS: ["donate.js"],
-//         stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
-//         layout: "layout"
-//     });
-// });
-
 route.get("/donate", (req, res) => {
-    res.render("coming-soon", {
-        title: "Coming Soon - Donate",
+    res.render("donate", {
+        title: "Donate",
         description: "Support our mission with a donation to MAS Central Indy",
-        additionalCSS: ["coming-soon.css"],
+        additionalCSS: ["donate.css"],
+        additionalJS: ["donate.js"],
+        stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
         layout: "layout"
     });
 });
+
+// route.get("/donate", (req, res) => {
+//     res.render("coming-soon", {
+//         title: "Coming Soon - Donate",
+//         description: "Support our mission with a donation to MAS Central Indy",
+//         additionalCSS: ["coming-soon.css"],
+//         layout: "layout"
+//     });
+// });
 
 route.get("/privacy-policy", (req, res) => {
     res.render("privacy-policy", {

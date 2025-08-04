@@ -288,7 +288,7 @@ class EventsManager {
         content.className = 'event-content';
         
         const category = this.formatCategory(event.category);
-        const date = this.formatDate(event.eventDate);
+        const date = this.formatDate(event.eventDate, event.timezone);
         const time = this.formatTime(event.startTime);
         const description = event.shortDescription || (event.description ? event.description.substring(0, 150) + '...' : '');
         
@@ -855,13 +855,14 @@ class EventsManager {
         return categoryMap[category] || 'Event';
     }
 
-    formatDate(date) {
+    formatDate(date, timezone = 'America/Indiana/Indianapolis') {
         if (!date) return 'Date TBA';
         try {
             const options = { 
                 year: 'numeric', 
                 month: 'long', 
-                day: 'numeric' 
+                day: 'numeric',
+                timeZone: timezone
             };
             return new Date(date).toLocaleDateString('en-US', options);
         } catch (error) {
