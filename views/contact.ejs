@@ -36,6 +36,20 @@
                         <label for="phone" class="form-label">Phone Number</label>
                         <input type="tel" id="phone" name="phone" class="form-input">
                     </div>
+
+                    <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+                    <input
+                        type="text"
+                        id="contact_extra"
+                        name="contact_extra"
+                        tabindex="-1"
+                        aria-hidden="true"
+                        autocomplete="new-password"
+                        inputmode="none"
+                        placeholder="" />
+                    </div>
+
+                     <input type="hidden" name="ts" value="<%= Date.now() %>">
                     
                     <div class="form-group">
                         <label for="subject" class="form-label">Subject <span class="required">*</span></label>

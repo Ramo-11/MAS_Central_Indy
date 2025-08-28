@@ -1,6 +1,105 @@
 const nodemailer = require('nodemailer');
 const { generalLogger } = require('../generalLogger');
 require('dotenv').config();
+const { isEmail, isLength, trim } = require('validator');
+const { encode } = require('he');
+const disposableDomains = require('disposable-email-domains');
+const disposableWildcard = require('disposable-email-domains/wildcard.json');
+
+function emailDomain(email) {
+  return email.split('@').pop().toLowerCase();
+}
+
+function isDisposable(email) {
+  const domain = emailDomain(email);
+  if (disposableDomains.includes(domain)) return true;
+  for (const pattern of disposableWildcard) {
+    if (pattern.startsWith('*.')) {
+      const suffix = pattern.slice(1).toLowerCase(); // e.g. ".33mail.com"
+      if (domain.endsWith(suffix)) return true;
+    }
+  }
+  return false;
+}
+
+// Bot traps: honeypot + min-time
+function basicBotChecks(body) {
+  // Honeypot name chosen to avoid Chrome autofill
+  const honeypot = (body.contact_extra || '').toString().trim();
+  if (honeypot) throw new Error('Spam detected (honeypot)');
+
+  const submittedAt = Number(body.ts);
+  const now = Date.now();
+  if (!submittedAt || Number.isNaN(submittedAt) || now - submittedAt < 3000) {
+    throw new Error('Spam detected (too fast)');
+  }
+}
+
+// Validate + sanitize + escape for HTML
+function validateAndSanitize(body) {
+  const cleaned = {
+    firstName: trim((body.firstName || '').toString()),
+    lastName:  trim((body.lastName  || '').toString()),
+    email:     trim((body.email     || '').toString()).toLowerCase(),
+    phone:     trim((body.phone     || '').toString()),
+    subject:   trim((body.subject   || '').toString()),
+    message:   (body.message        || '').toString().trim()
+  };
+
+  // Required-field checks to keep your current semantics
+  if (!cleaned.firstName || !cleaned.lastName || !cleaned.email || !cleaned.subject || !cleaned.message) {
+    const err = new Error('Please fill in all required fields');
+    err.status = 400;
+    throw err;
+  }
+
+  if (!isEmail(cleaned.email)) {
+    const err = new Error('Please enter a valid email address');
+    err.status = 400;
+    throw err;
+  }
+
+  // Reasonable length guards
+  if (!isLength(cleaned.firstName, { min: 2, max: 80 })) {
+    const err = new Error('First name must be between 2 and 80 characters.');
+    err.status = 400;
+    throw err;
+  }
+  if (!isLength(cleaned.lastName, { min: 2, max: 80 })) {
+    const err = new Error('Last name must be between 2 and 80 characters.');
+    err.status = 400;
+    throw err;
+  }
+  if (!isLength(cleaned.subject, { min: 2, max: 100 })) {
+    const err = new Error('Subject must be between 2 and 100 characters.');
+    err.status = 400;
+    throw err;
+  }
+  if (!isLength(cleaned.message, { min: 2, max: 5000 })) {
+    const err = new Error('Message must be between 2 and 5000 characters.');
+    err.status = 400;
+    throw err;
+  }
+
+  // Disposable email block
+  if (isDisposable(cleaned.email)) {
+    const err = new Error('Disposable email not allowed');
+    err.status = 400;
+    throw err;
+  }
+
+  // Escape for safe HTML embedding; convert newlines
+  const safe = {
+    safeFirstName: encode(cleaned.firstName),
+    safeLastName:  encode(cleaned.lastName),
+    safeEmail:     encode(cleaned.email),
+    safePhone:     encode(cleaned.phone || ''),
+    safeSubject:   encode(cleaned.subject),
+    safeMsgHtml:   encode(cleaned.message).replace(/\n/g, '<br>')
+  };
+
+  return { ...cleaned, ...safe };
+}
 
 // Create transporter for sending emails
 const createTransporter = () => {
@@ -40,34 +139,11 @@ const getContactPage = (req, res) => {
 // Handle contact form submission
 const submitContactForm = async (req, res) => {
     try {
-        const { firstName, lastName, email, phone, subject, message } = req.body;
+        basicBotChecks(req.body);
         
-        // Validate required fields
-        if (!firstName || !lastName || !email || !subject || !message) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please fill in all required fields'
-            });
-        }
-        
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please enter a valid email address'
-            });
-        }
-        
-        // Sanitize inputs
-        const sanitizedData = {
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            email: email.trim().toLowerCase(),
-            phone: phone ? phone.trim() : '',
-            subject: subject.trim(),
-            message: message.trim()
-        };
+        const sanitizedData = validateAndSanitize(req.body);
+
+        const { safeFirstName, safeLastName, safeEmail, safePhone, safeSubject, safeMsgHtml } = sanitizedData;
         
         // Create transporter
         const transporter = createTransporter();
@@ -86,7 +162,8 @@ const submitContactForm = async (req, res) => {
             'other': 'Other'
         };
         
-        const emailSubject = `Website Contact: ${subjectMap[sanitizedData.subject] || 'General Inquiry'}`;
+        const emailSubject = `Website Contact: ${subjectMap[safeSubject] || 'General Inquiry'}`;
+
         
         // Email content for organization
         const organizationEmailHtml = `
@@ -101,21 +178,21 @@ const submitContactForm = async (req, res) => {
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <td style="padding: 8px 0; font-weight: bold; color: #6b7280; width: 120px;">Name:</td>
-                                <td style="padding: 8px 0; color: #374151;">${sanitizedData.firstName} ${sanitizedData.lastName}</td>
+                                <td style="padding: 8px 0; color: #374151;">${safeFirstName} ${safeLastName}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Email:</td>
-                                <td style="padding: 8px 0; color: #374151;">${sanitizedData.email}</td>
+                                <td style="padding: 8px 0; color: #374151;">${safeEmail}</td>
                             </tr>
-                            ${sanitizedData.phone ? `
+                            ${safePhone ? `
                             <tr>
                                 <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Phone:</td>
-                                <td style="padding: 8px 0; color: #374151;">${sanitizedData.phone}</td>
+                                <td style="padding: 8px 0; color: #374151;">${safePhone}</td>
                             </tr>
                             ` : ''}
                             <tr>
                                 <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Subject:</td>
-                                <td style="padding: 8px 0; color: #374151;">${subjectMap[sanitizedData.subject] || 'Other'}</td>
+                                <td style="padding: 8px 0; color: #374151;">${subjectMap[safeSubject] || 'Other'}</td>
                             </tr>
                         </table>
                     </div>
@@ -123,7 +200,7 @@ const submitContactForm = async (req, res) => {
                     <div>
                         <h3 style="color: #374151; margin-bottom: 15px;">Message</h3>
                         <div style="background: #f9fafb; padding: 20px; border-radius: 6px; border-left: 4px solid #0f4f9f;">
-                            <p style="margin: 0; line-height: 1.6; color: #374151; white-space: pre-line;">${sanitizedData.message}</p>
+                            <p style="margin: 0; line-height: 1.6; color: #374151; white-space: pre-line;">${safeMsgHtml}</p>
                         </div>
                     </div>
                     
@@ -155,18 +232,18 @@ const submitContactForm = async (req, res) => {
                 
                 <div style="border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 8px 8px;">
                     <p style="margin: 0 0 20px 0; color: #374151; line-height: 1.6;">
-                        Dear ${sanitizedData.firstName},
+                        Dear ${safeFirstName},
                     </p>
                     
                     <p style="margin: 0 0 20px 0; color: #374151; line-height: 1.6;">
                         Thank you for reaching out to MAS Central Indy! We have received your message regarding 
-                        <strong>${subjectMap[sanitizedData.subject] || 'your inquiry'}</strong> and will respond 
+                        <strong>${subjectMap[safeSubject] || 'your inquiry'}</strong> and will respond 
                         within 24 hours.
                     </p>
                     
                     <div style="background: #f9fafb; padding: 20px; border-radius: 6px; margin: 20px 0;">
                         <h3 style="margin: 0 0 15px 0; color: #374151; font-size: 16px;">Your Message Summary:</h3>
-                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5; white-space: pre-line;">${sanitizedData.message}</p>
+                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5; white-space: pre-line;">${safeMsgHtml}</p>
                     </div>
                     
                     <p style="margin: 20px 0; color: #374151; line-height: 1.6;">
@@ -194,9 +271,9 @@ const submitContactForm = async (req, res) => {
         
         // Send email to organization
         const organizationMailOptions = {
-            from: `"${sanitizedData.firstName} ${sanitizedData.lastName}" <${process.env.CONTACT_EMAIL}>`,
+            from: `"${safeFirstName} ${safeLastName}" <${process.env.CONTACT_EMAIL}>`,
             to: process.env.CONTACT_EMAIL,
-            replyTo: sanitizedData.email,
+            replyTo: safeEmail,
             subject: emailSubject,
             html: organizationEmailHtml
         };
@@ -204,7 +281,7 @@ const submitContactForm = async (req, res) => {
         // Send auto-reply to user
         const autoReplyOptions = {
             from: `"MAS Central Indy" <${process.env.CONTACT_EMAIL}>`,
-            to: sanitizedData.email,
+            to: safeEmail,
             subject: 'Thank you for contacting MAS Central Indy',
             html: autoReplyHtml
         };
@@ -216,8 +293,8 @@ const submitContactForm = async (req, res) => {
         ]);
         
         // Log successful submission
-        generalLogger.info(`Contact form submitted successfully by ${sanitizedData.email} - Subject: ${sanitizedData.subject}`);
-        
+        generalLogger.info(`Contact form submitted successfully by ${safeEmail} - Subject: ${safeSubject}`);
+
         // Return success response
         res.status(200).json({
             success: true,
