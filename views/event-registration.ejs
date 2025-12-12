@@ -434,6 +434,28 @@
                         </div>
                     <% } %>
 
+                    <% if (event.media && event.media.videoUrl) { %>
+                        <%
+                            // Convert YouTube URL to embed format
+                            let videoEmbedUrl = event.media.videoUrl;
+                            if (videoEmbedUrl.includes('youtube.com/watch?v=')) {
+                                const videoId = videoEmbedUrl.split('v=')[1].split('&')[0];
+                                videoEmbedUrl = `https://www.youtube.com/embed/${videoId}`;
+                            } else if (videoEmbedUrl.includes('youtu.be/')) {
+                                const videoId = videoEmbedUrl.split('youtu.be/')[1].split('?')[0];
+                                videoEmbedUrl = `https://www.youtube.com/embed/${videoId}`;
+                            }
+                        %>
+                        <div class="event-summary-video">
+                            <iframe
+                                src="<%= videoEmbedUrl %>"
+                                title="<%= event.title %> Video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    <% } %>
+
                     <div class="event-summary-content">
                         <h3>Event Details</h3>
 

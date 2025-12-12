@@ -673,6 +673,8 @@
     gap: var(--spacing-lg);
     position: sticky;
     top: var(--spacing-xl);
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .event-summary-card {
@@ -680,17 +682,32 @@
     border-radius: var(--border-radius-xl);
     box-shadow: var(--shadow-md);
     overflow: hidden;
+    max-width: 100%;
 }
 
 .event-summary-image {
-    aspect-ratio: 16/9;
     overflow: hidden;
 }
 
 .event-summary-image img {
     width: 100%;
+    height: auto;
+    display: block;
+    max-width: 100%;
+}
+
+/* Video embed in sidebar */
+.event-summary-video {
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    background: var(--gray-900);
+}
+
+.event-summary-video iframe {
+    width: 100%;
     height: 100%;
-    object-fit: cover;
+    border: none;
+    max-width: 100%;
 }
 
 .event-summary-content {
@@ -888,12 +905,21 @@
     }
 
     .event-summary-card {
-        display: grid;
-        grid-template-columns: 200px 1fr;
+        display: block;
     }
 
     .event-summary-image {
-        aspect-ratio: 1;
+        max-height: 400px;
+        display: flex;
+        justify-content: center;
+        background: var(--gray-100);
+    }
+
+    .event-summary-image img {
+        width: auto;
+        max-width: 100%;
+        max-height: 400px;
+        object-fit: contain;
     }
 }
 
@@ -917,10 +943,6 @@
 
     .registration-form {
         padding: var(--spacing-lg);
-    }
-
-    .event-summary-card {
-        grid-template-columns: 1fr;
     }
 
     .form-actions {
