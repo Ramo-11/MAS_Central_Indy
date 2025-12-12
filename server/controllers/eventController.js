@@ -1,29 +1,30 @@
-const Event = require("../../models/Event");
-const { generalLogger } = require("../generalLogger");
+const Event = require('../../models/Event');
+const { generalLogger } = require('../generalLogger');
 
 // Get all events (unified page)
 const getAllEvents = async (req, res) => {
     try {
         // Render the unified events page
-        res.render("events", {
-            title: "Events",
-            description: "Discover our community events, activities, and programs at MAS Central Indy",
-            additionalCSS: ["events.css"],
-            additionalJS: ["events.js"],
-            layout: "layout"
+        res.render('events', {
+            title: 'Events',
+            description:
+                'Discover our community events, activities, and programs at MAS Central Indy',
+            additionalCSS: ['events.css'],
+            additionalJS: ['events.js'],
+            layout: 'layout',
         });
-
     } catch (error) {
         generalLogger.error(`Error in getAllEvents: ${error.message}`);
-        
+
         // Render error state
-        res.render("events", {
-            title: "Events", 
-            description: "Discover our community events, activities, and programs at MAS Central Indy",
-            additionalCSS: ["events.css"],
-            additionalJS: ["events.js"],
-            layout: "layout",
-            error: "Unable to load events at this time. Please try again later."
+        res.render('events', {
+            title: 'Events',
+            description:
+                'Discover our community events, activities, and programs at MAS Central Indy',
+            additionalCSS: ['events.css'],
+            additionalJS: ['events.js'],
+            layout: 'layout',
+            error: 'Unable to load events at this time. Please try again later.',
         });
     }
 };
@@ -31,21 +32,21 @@ const getAllEvents = async (req, res) => {
 // API endpoint to get events based on filters
 const getEventsAPI = async (req, res) => {
     try {
-        const { 
-            category = 'all', 
-            page = 1, 
-            limit = 12, 
+        const {
+            category = 'all',
+            page = 1,
+            limit = 12,
             period = 'upcoming',
-            featured = false 
+            featured = false,
         } = req.query;
-        
+
         const skip = (page - 1) * limit;
-        
+
         // Build base query
         let query = {
             status: { $ne: 'draft' },
             isPublic: true,
-            isArchived: { $ne: true }
+            isArchived: { $ne: true },
         };
 
         // Add date filter based on period
@@ -87,21 +88,21 @@ const getEventsAPI = async (req, res) => {
             // Sort based on period
             const sortOrder = period === 'upcoming' ? { eventDate: 1 } : { eventDate: -1 };
 
-            generalLogger.debug(`Fetching events with query: ${JSON.stringify(query)}, sort: ${JSON.stringify(sortOrder)}, page: ${page}, limit: ${limit}`);
             // Execute database queries
             const [eventResults, countResults] = await Promise.all([
                 Event.find(query)
-                    .select('title slug description shortDescription category eventType status eventDate startTime endTime timezone location speakers media registration tags featured analytics isPublic')
+                    .select(
+                        'title slug description shortDescription category eventType status eventDate startTime endTime timezone location speakers media registration tags featured analytics isPublic recurring'
+                    )
                     .sort(sortOrder)
                     .skip(skip)
                     .limit(parseInt(limit))
                     .lean(),
-                Event.countDocuments(query)
+                Event.countDocuments(query),
             ]);
 
             events = eventResults || [];
             totalEvents = countResults || 0;
-
         } catch (dbError) {
             generalLogger.error(`Database query error in getEventsAPI: ${dbError.message}`);
             // Continue with empty arrays to avoid breaking the API
@@ -116,14 +117,13 @@ const getEventsAPI = async (req, res) => {
             hasMore,
             currentPage: parseInt(page),
             totalPages,
-            totalEvents
+            totalEvents,
         });
-
     } catch (error) {
         generalLogger.error(`Error in getEventsAPI: ${error.message}`);
-        return res.status(500).json({ 
-            success: false, 
-            message: "Unable to load events" 
+        return res.status(500).json({
+            success: false,
+            message: 'Unable to load events',
         });
     }
 };
@@ -131,18 +131,18 @@ const getEventsAPI = async (req, res) => {
 // Get events for calendar view
 const getCalendarEvents = async (req, res) => {
     try {
-        const { 
-            month, 
-            year, 
-            category = 'all'
-            // period = 'upcoming' 
+        const {
+            month,
+            year,
+            category = 'all',
+            // period = 'upcoming'
         } = req.query;
 
         // Build base query
         let query = {
             status: { $ne: 'draft' },
             isPublic: true,
-            isArchived: { $ne: true }
+            isArchived: { $ne: true },
         };
 
         // Add date range filter for the specific month/year if provided
@@ -180,21 +180,22 @@ const getCalendarEvents = async (req, res) => {
         }
 
         const events = await Event.find(query)
-            .select('title slug description shortDescription category eventType status eventDate startTime endTime timezone location speakers media registration tags featured analytics isPublic')
+            .select(
+                'title slug description shortDescription category eventType status eventDate startTime endTime timezone location speakers media registration tags featured analytics isPublic recurring'
+            )
             .sort({ eventDate: 1 })
             .limit(100) // Limit to avoid too much data
             .lean();
 
         return res.status(200).json({
             success: true,
-            events: events || []
+            events: events || [],
         });
-
     } catch (error) {
         generalLogger.error(`Error in getCalendarEvents: ${error.message}`);
         return res.status(500).json({
             success: false,
-            message: "Unable to load calendar events"
+            message: 'Unable to load calendar events',
         });
     }
 };
@@ -203,46 +204,45 @@ const getCalendarEvents = async (req, res) => {
 const getEventDetails = async (req, res) => {
     try {
         const { slug } = req.params;
-        
-        const event = await Event.findOne({ 
-            slug, 
-            status: { $ne: 'draft' }, 
-            isPublic: true 
+
+        const event = await Event.findOne({
+            slug,
+            status: { $ne: 'draft' },
+            isPublic: true,
         }).lean();
 
         if (!event) {
             generalLogger.warn(`Event not found with slug: ${slug}`);
-            return res.status(404).render("error", { 
+            return res.status(404).render('error', {
                 status: 404,
-                message: "Event not found",
-                title: "Event Not Found",
-                layout: "layout"
+                message: 'Event not found',
+                title: 'Event Not Found',
+                layout: 'layout',
             });
         }
 
         // Increment view count (fire and forget)
         Event.findByIdAndUpdate(event._id, {
-            $inc: { 'analytics.views': 1 }
-        }).catch(error => {
+            $inc: { 'analytics.views': 1 },
+        }).catch((error) => {
             generalLogger.error(`Error updating view count: ${error.message}`);
         });
 
-        res.render("event-details", {
+        res.render('event-details', {
             title: event.title,
             description: event.shortDescription || event.description,
-            additionalCSS: ["event-details.css"],
-            additionalJS: ["event-details.js"],
-            layout: "layout",
-            event
+            additionalCSS: ['event-details.css'],
+            additionalJS: ['event-details.js'],
+            layout: 'layout',
+            event,
         });
-
     } catch (error) {
         generalLogger.error(`Error in getEventDetails: ${error.message}`);
-        return res.status(500).render("error", { 
+        return res.status(500).render('error', {
             status: 500,
-            message: "Unable to load event details",
-            title: "Server Error",
-            layout: "layout"
+            message: 'Unable to load event details',
+            title: 'Server Error',
+            layout: 'layout',
         });
     }
 };
@@ -256,29 +256,28 @@ const trackEventShare = async (req, res) => {
         if (!eventId) {
             return res.status(400).json({
                 success: false,
-                message: "Event ID is required"
+                message: 'Event ID is required',
             });
         }
 
         // Update share count (fire and forget)
         Event.findByIdAndUpdate(eventId, {
-            $inc: { 'analytics.shares': 1 }
-        }).catch(error => {
+            $inc: { 'analytics.shares': 1 },
+        }).catch((error) => {
             generalLogger.error(`Error updating share count: ${error.message}`);
         });
 
         generalLogger.info(`Event ${eventId} shared on ${platform}`);
-        
-        return res.status(200).json({ 
-            success: true, 
-            message: "Share tracked successfully" 
-        });
 
+        return res.status(200).json({
+            success: true,
+            message: 'Share tracked successfully',
+        });
     } catch (error) {
         generalLogger.error(`Error in trackEventShare: ${error.message}`);
-        return res.status(500).json({ 
-            success: false, 
-            message: "Unable to track share" 
+        return res.status(500).json({
+            success: false,
+            message: 'Unable to track share',
         });
     }
 };
@@ -288,5 +287,5 @@ module.exports = {
     getEventsAPI,
     getCalendarEvents,
     getEventDetails,
-    trackEventShare
+    trackEventShare,
 };

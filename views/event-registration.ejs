@@ -1,0 +1,579 @@
+<!-- Registration Hero Section -->
+<section class="registration-hero">
+    <div class="container">
+        <div class="registration-hero-content">
+            <div class="registration-breadcrumb">
+                <a href="/events" class="breadcrumb-link">Events</a>
+                <span class="breadcrumb-separator">/</span>
+                <a href="/events/<%= event.slug %>" class="breadcrumb-link"><%= event.title %></a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">Register</span>
+            </div>
+
+            <div class="event-type-badge">
+                <% if (event.recurring && event.recurring.isRecurring) { %>
+                    <span class="badge badge-program">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 2.1l4 4-4 4"></path>
+                            <path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4"></path>
+                            <path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"></path>
+                        </svg>
+                        Recurring Program
+                    </span>
+                <% } else { %>
+                    <span class="badge badge-event">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        One-Time Event
+                    </span>
+                <% } %>
+            </div>
+
+            <h1 class="registration-title">Register for <%= event.title %></h1>
+
+            <div class="registration-meta">
+                <div class="meta-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span><%= formatDate(event.eventDate) %></span>
+                </div>
+
+                <% if (event.startTime) { %>
+                <div class="meta-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12,6 12,12 16,14"></polyline>
+                    </svg>
+                    <span><%= formatTime(event.startTime) %><% if (event.endTime) { %> - <%= formatTime(event.endTime) %><% } %></span>
+                </div>
+                <% } %>
+
+                <% if (event.location && event.location.venue) { %>
+                <div class="meta-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span><%= event.location.venue %></span>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Registration Form Section -->
+<section class="registration-form-section">
+    <div class="container">
+        <div class="registration-grid">
+            <!-- Main Form -->
+            <div class="registration-form-wrapper">
+                <% if (registrationStatus === 'closed' || registrationStatus === 'full') { %>
+                    <div class="registration-closed-card">
+                        <div class="closed-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h2>Registration Unavailable</h2>
+                        <p><%= statusMessage %></p>
+                        <a href="/events/<%= event.slug %>" class="btn btn-secondary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12,19 5,12 12,5"></polyline>
+                            </svg>
+                            Back to Event
+                        </a>
+                    </div>
+                <% } else { %>
+                    <% if (registrationStatus === 'waitlist') { %>
+                        <div class="waitlist-notice">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <div>
+                                <strong>Event is Full</strong>
+                                <p>You can join the waitlist below and we'll contact you if a spot becomes available.</p>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <form id="registrationForm" class="registration-form" data-event-slug="<%= event.slug %>">
+                        <div class="form-header">
+                            <h2>Registration Form</h2>
+                            <p>Please fill out the form below to complete your registration.</p>
+                        </div>
+
+                        <div class="form-fields">
+                            <% fields.forEach(function(field, index) { %>
+                                <div class="form-group <%= field.type === 'checkbox' ? 'form-group-checkbox' : '' %>" data-field-name="<%= field.name %>">
+                                    <% if (field.type !== 'checkbox') { %>
+                                        <label for="field_<%= index %>" class="form-label">
+                                            <%= field.name %>
+                                            <% if (field.required) { %><span class="required">*</span><% } %>
+                                        </label>
+                                    <% } %>
+
+                                    <% if (field.type === 'text') { %>
+                                        <input
+                                            type="text"
+                                            id="field_<%= index %>"
+                                            name="<%= field.name %>"
+                                            class="form-input"
+                                            placeholder="<%= field.placeholder || '' %>"
+                                            <% if (field.required) { %>required<% } %>
+                                            <% if (field.validation && field.validation.minLength) { %>minlength="<%= field.validation.minLength %>"<% } %>
+                                            <% if (field.validation && field.validation.maxLength) { %>maxlength="<%= field.validation.maxLength %>"<% } %>
+                                            <% if (field.validation && field.validation.pattern) { %>pattern="<%= field.validation.pattern %>"<% } %>
+                                        >
+
+                                    <% } else if (field.type === 'textarea') { %>
+                                        <textarea
+                                            id="field_<%= index %>"
+                                            name="<%= field.name %>"
+                                            class="form-textarea"
+                                            placeholder="<%= field.placeholder || '' %>"
+                                            rows="4"
+                                            <% if (field.required) { %>required<% } %>
+                                            <% if (field.validation && field.validation.minLength) { %>minlength="<%= field.validation.minLength %>"<% } %>
+                                            <% if (field.validation && field.validation.maxLength) { %>maxlength="<%= field.validation.maxLength %>"<% } %>
+                                        ></textarea>
+
+                                    <% } else if (field.type === 'email') { %>
+                                        <input
+                                            type="email"
+                                            id="field_<%= index %>"
+                                            name="<%= field.name %>"
+                                            class="form-input"
+                                            placeholder="<%= field.placeholder || 'your@email.com' %>"
+                                            <% if (field.required) { %>required<% } %>
+                                        >
+
+                                    <% } else if (field.type === 'phone') { %>
+                                        <input
+                                            type="tel"
+                                            id="field_<%= index %>"
+                                            name="<%= field.name %>"
+                                            class="form-input"
+                                            placeholder="<%= field.placeholder || '(555) 123-4567' %>"
+                                            <% if (field.required) { %>required<% } %>
+                                        >
+
+                                    <% } else if (field.type === 'number') { %>
+                                        <input
+                                            type="number"
+                                            id="field_<%= index %>"
+                                            name="<%= field.name %>"
+                                            class="form-input"
+                                            placeholder="<%= field.placeholder || '' %>"
+                                            <% if (field.required) { %>required<% } %>
+                                            <% if (field.validation && field.validation.min !== undefined) { %>min="<%= field.validation.min %>"<% } %>
+                                            <% if (field.validation && field.validation.max !== undefined) { %>max="<%= field.validation.max %>"<% } %>
+                                        >
+
+                                    <% } else if (field.type === 'date') { %>
+                                        <input
+                                            type="date"
+                                            id="field_<%= index %>"
+                                            name="<%= field.name %>"
+                                            class="form-input"
+                                            <% if (field.required) { %>required<% } %>
+                                        >
+
+                                    <% } else if (field.type === 'select') { %>
+                                        <select
+                                            id="field_<%= index %>"
+                                            name="<%= field.name %>"
+                                            class="form-select"
+                                            <% if (field.required) { %>required<% } %>
+                                        >
+                                            <option value="">Select an option</option>
+                                            <% if (field.options && field.options.length > 0) { %>
+                                                <% field.options.forEach(function(option) { %>
+                                                    <option value="<%= option %>"><%= option %></option>
+                                                <% }); %>
+                                            <% } %>
+                                        </select>
+
+                                    <% } else if (field.type === 'radio') { %>
+                                        <div class="radio-group">
+                                            <% if (field.options && field.options.length > 0) { %>
+                                                <% field.options.forEach(function(option, optIndex) { %>
+                                                    <label class="radio-label">
+                                                        <input
+                                                            type="radio"
+                                                            name="<%= field.name %>"
+                                                            value="<%= option %>"
+                                                            <% if (field.required && optIndex === 0) { %>required<% } %>
+                                                        >
+                                                        <span class="radio-custom"></span>
+                                                        <span class="radio-text"><%= option %></span>
+                                                    </label>
+                                                <% }); %>
+                                            <% } %>
+                                        </div>
+
+                                    <% } else if (field.type === 'checkbox') { %>
+                                        <% if (field.options && field.options.length > 0) { %>
+                                            <label class="form-label">
+                                                <%= field.name %>
+                                                <% if (field.required) { %><span class="required">*</span><% } %>
+                                            </label>
+                                            <div class="checkbox-group">
+                                                <% field.options.forEach(function(option) { %>
+                                                    <label class="checkbox-label">
+                                                        <input
+                                                            type="checkbox"
+                                                            name="<%= field.name %>"
+                                                            value="<%= option %>"
+                                                        >
+                                                        <span class="checkbox-custom"></span>
+                                                        <span class="checkbox-text"><%= option %></span>
+                                                    </label>
+                                                <% }); %>
+                                            </div>
+                                        <% } else { %>
+                                            <label class="checkbox-label single-checkbox">
+                                                <input
+                                                    type="checkbox"
+                                                    id="field_<%= index %>"
+                                                    name="<%= field.name %>"
+                                                    value="true"
+                                                    <% if (field.required) { %>required<% } %>
+                                                >
+                                                <span class="checkbox-custom"></span>
+                                                <span class="checkbox-text">
+                                                    <%= field.name %>
+                                                    <% if (field.required) { %><span class="required">*</span><% } %>
+                                                </span>
+                                            </label>
+                                        <% } %>
+                                    <% } %>
+
+                                    <% if (field.helpText) { %>
+                                        <p class="form-help"><%= field.helpText %></p>
+                                    <% } %>
+
+                                    <p class="form-error" style="display: none;"></p>
+                                </div>
+                            <% }); %>
+                        </div>
+
+                        <% if (event.registration.waiver && event.registration.waiver.enabled) { %>
+                        <div class="waiver-section">
+                            <div class="waiver-header">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14,2 14,8 20,8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10,9 9,9 8,9"></polyline>
+                                </svg>
+                                <h3><%= event.registration.waiver.title || 'Terms & Acknowledgments' %></h3>
+                            </div>
+
+                            <% if (event.registration.waiver.description) { %>
+                                <p class="waiver-description"><%= event.registration.waiver.description %></p>
+                            <% } %>
+
+                            <% if (event.registration.waiver.acknowledgments && event.registration.waiver.acknowledgments.length > 0) { %>
+                                <div class="waiver-acknowledgments">
+                                    <%
+                                        const sortedAcks = event.registration.waiver.acknowledgments.sort((a, b) => (a.order || 0) - (b.order || 0));
+                                        sortedAcks.forEach(function(ack, index) {
+                                    %>
+                                        <div class="acknowledgment-item">
+                                            <label class="checkbox-label acknowledgment-label">
+                                                <input
+                                                    type="checkbox"
+                                                    name="waiver_ack_<%= index %>"
+                                                    value="<%= ack.text %>"
+                                                    data-ack-id="<%= ack._id %>"
+                                                    <% if (ack.required) { %>required data-required="true"<% } %>
+                                                >
+                                                <span class="checkbox-custom"></span>
+                                                <span class="checkbox-text">
+                                                    <%= ack.text %>
+                                                    <% if (ack.required) { %><span class="required">*</span><% } %>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    <% }); %>
+                                </div>
+                            <% } %>
+
+                            <% if (event.registration.waiver.signature && event.registration.waiver.signature.required) { %>
+                                <div class="signature-section">
+                                    <p class="signature-legal-text"><%= event.registration.waiver.signature.legalText || 'By signing below, I acknowledge that I have read and agree to all the terms and conditions above.' %></p>
+
+                                    <% const sigType = event.registration.waiver.signature.type || 'both'; %>
+
+                                    <% if (sigType === 'both') { %>
+                                        <div class="signature-type-toggle">
+                                            <button type="button" class="sig-type-btn active" data-type="type">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="4,7 4,4 20,4 20,7"></polyline>
+                                                    <line x1="9" y1="20" x2="15" y2="20"></line>
+                                                    <line x1="12" y1="4" x2="12" y2="20"></line>
+                                                </svg>
+                                                Type Name
+                                            </button>
+                                            <button type="button" class="sig-type-btn" data-type="draw">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                                                    <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                                                    <path d="M2 2l7.586 7.586"></path>
+                                                    <circle cx="11" cy="11" r="2"></circle>
+                                                </svg>
+                                                Draw Signature
+                                            </button>
+                                        </div>
+                                    <% } %>
+
+                                    <div class="signature-input-container">
+                                        <% if (sigType === 'type' || sigType === 'both') { %>
+                                            <div class="signature-type-input <%= sigType === 'both' ? 'active' : '' %>" data-sig-mode="type">
+                                                <label for="signatureTyped" class="form-label">
+                                                    Type your full legal name <span class="required">*</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    id="signatureTyped"
+                                                    name="signature_typed"
+                                                    class="form-input signature-typed-input"
+                                                    placeholder="Your full legal name"
+                                                    <%= sigType === 'type' ? 'required' : '' %>
+                                                >
+                                                <p class="signature-preview"></p>
+                                            </div>
+                                        <% } %>
+
+                                        <% if (sigType === 'draw' || sigType === 'both') { %>
+                                            <div class="signature-draw-input <%= sigType === 'draw' ? 'active' : '' %>" data-sig-mode="draw">
+                                                <label class="form-label">
+                                                    Draw your signature <span class="required">*</span>
+                                                </label>
+                                                <div class="signature-canvas-container">
+                                                    <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+                                                    <button type="button" class="clear-signature-btn" id="clearSignature">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <polyline points="3,6 5,6 21,6"></polyline>
+                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                        </svg>
+                                                        Clear
+                                                    </button>
+                                                </div>
+                                                <input type="hidden" id="signatureData" name="signature_draw">
+                                            </div>
+                                        <% } %>
+                                    </div>
+
+                                    <input type="hidden" id="signatureType" name="signature_type" value="<%= sigType === 'draw' ? 'draw' : 'type' %>">
+                                    <p class="form-error signature-error" style="display: none;"></p>
+                                </div>
+                            <% } %>
+                        </div>
+                        <% } %>
+
+                        <% if (event.registration.fee && event.registration.fee.amount > 0) { %>
+                            <div class="fee-notice">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                                <div>
+                                    <strong>Registration Fee: $<%= event.registration.fee.amount %> <%= event.registration.fee.currency %></strong>
+                                    <p>Please send payment via Zelle to <strong>mascentralindy@gmail.com</strong></p>
+                                    <p class="fee-notice-warning">Registration is not final until payment is received.</p>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">
+                                <span class="btn-text">
+                                    <% if (isWaitlist) { %>
+                                        Join Waitlist
+                                    <% } else { %>
+                                        Complete Registration
+                                    <% } %>
+                                </span>
+                                <span class="btn-loading" style="display: none;">
+                                    <svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32">
+                                            <animate attributeName="stroke-dashoffset" values="32;0" dur="1s" repeatCount="indefinite"/>
+                                        </circle>
+                                    </svg>
+                                    Processing...
+                                </span>
+                            </button>
+                            <a href="/events/<%= event.slug %>" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                <% } %>
+            </div>
+
+            <!-- Sidebar Info -->
+            <div class="registration-sidebar">
+                <div class="event-summary-card">
+                    <% if (event.media && event.media.featuredImage && event.media.featuredImage.url) { %>
+                        <div class="event-summary-image">
+                            <img src="<%= event.media.featuredImage.url %>" alt="<%= event.title %>">
+                        </div>
+                    <% } %>
+
+                    <div class="event-summary-content">
+                        <h3>Event Details</h3>
+
+                        <div class="summary-item">
+                            <span class="summary-label">Category</span>
+                            <span class="summary-value"><%= formatCategory(event.category) %></span>
+                        </div>
+
+                        <div class="summary-item">
+                            <span class="summary-label">Event Type</span>
+                            <span class="summary-value"><%= event.eventType === 'virtual' ? 'Virtual' : event.eventType === 'hybrid' ? 'Hybrid' : 'In-Person' %></span>
+                        </div>
+
+                        <% if (event.recurring && event.recurring.isRecurring) { %>
+                            <div class="summary-item">
+                                <span class="summary-label">Schedule</span>
+                                <span class="summary-value"><%= formatFrequency(event.recurring.frequency) %></span>
+                            </div>
+                        <% } %>
+
+                        <% if (spotsRemaining !== null) { %>
+                            <div class="summary-item spots-remaining">
+                                <span class="summary-label">Availability</span>
+                                <span class="summary-value <%= spotsRemaining <= 5 ? 'low-spots' : '' %>">
+                                    <% if (spotsRemaining === 0) { %>
+                                        No spots available
+                                    <% } else if (spotsRemaining === 1) { %>
+                                        1 spot remaining
+                                    <% } else { %>
+                                        <%= spotsRemaining %> spots remaining
+                                    <% } %>
+                                </span>
+                            </div>
+                        <% } %>
+
+                        <% if (event.registration.registrationDeadline) { %>
+                            <div class="summary-item deadline">
+                                <span class="summary-label">Registration Deadline</span>
+                                <span class="summary-value"><%= formatDate(event.registration.registrationDeadline) %></span>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <% if (event.shortDescription || event.description) { %>
+                    <div class="event-description-card">
+                        <h4>About This Event</h4>
+                        <p><%= event.shortDescription || (event.description.length > 200 ? event.description.substring(0, 200) + '...' : event.description) %></p>
+                        <a href="/events/<%= event.slug %>" class="view-details-link">View Full Details</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Success Modal -->
+<div class="success-modal" id="successModal">
+    <div class="success-modal-overlay"></div>
+    <div class="success-modal-content">
+        <div class="success-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22,4 12,14.01 9,11.01"></polyline>
+            </svg>
+        </div>
+        <h2 id="successTitle">Registration Successful!</h2>
+        <p id="successMessage">Thank you for registering.</p>
+        <div class="confirmation-number">
+            <span>Confirmation #:</span>
+            <strong id="confirmationNumber"></strong>
+        </div>
+        <div class="success-actions">
+            <a href="/events/<%= event.slug %>" class="btn btn-primary">Back to Event</a>
+            <a href="/events" class="btn btn-secondary">Browse Events</a>
+        </div>
+    </div>
+</div>
+
+<%# EJS Helper Functions %>
+<%
+function formatCategory(category) {
+    const categoryMap = {
+        'community-service': 'Community Service',
+        'educational': 'Educational',
+        'religious': 'Religious',
+        'cultural': 'Cultural',
+        'youth': 'Youth Program',
+        'interfaith': 'Interfaith',
+        'fundraising': 'Fundraising',
+        'health-wellness': 'Health & Wellness',
+        'social': 'Social Event',
+        'workshop': 'Workshop',
+        'conference': 'Conference',
+        'meeting': 'Meeting',
+        'other': 'Other'
+    };
+    return categoryMap[category] || 'Event';
+}
+
+function formatDate(date) {
+    if (!date) return 'TBA';
+    try {
+        const options = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            timeZone: 'America/Indiana/Indianapolis'
+        };
+        return new Date(date).toLocaleDateString('en-US', options);
+    } catch (error) {
+        return 'TBA';
+    }
+}
+
+function formatTime(time) {
+    if (!time) return '';
+    try {
+        const [hours, minutes] = time.split(':');
+        const timeObj = new Date();
+        timeObj.setHours(parseInt(hours), parseInt(minutes));
+        return timeObj.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    } catch (error) {
+        return time;
+    }
+}
+
+function formatFrequency(frequency) {
+    const frequencyMap = {
+        'daily': 'Daily',
+        'weekly': 'Weekly',
+        'biweekly': 'Every Two Weeks',
+        'monthly': 'Monthly',
+        'yearly': 'Yearly',
+        'custom': 'Custom Schedule'
+    };
+    return frequencyMap[frequency] || frequency;
+}
+%>

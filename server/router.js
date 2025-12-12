@@ -1,12 +1,18 @@
 const express = require("express")
 require('dotenv').config()
-const { 
+const {
     getAllEvents,
     getEventsAPI,
     getCalendarEvents,
-    getEventDetails,  
+    getEventDetails,
     trackEventShare
 } = require("./controllers/eventController");
+
+const {
+    getRegistrationPage,
+    submitRegistration,
+    getRegistrationStatus
+} = require("./controllers/registrationController");
 
 const { getContactPage, submitContactForm } = require("./controllers/contactController");
 
@@ -47,6 +53,9 @@ route.get("/events", getAllEvents);
 
 // Individual event details
 route.get("/events/:slug", getEventDetails);
+
+// Event registration page
+route.get("/events/:slug/register", getRegistrationPage);
 
 // *********** API ROUTES FOR EVENTS **********
 
@@ -91,6 +100,10 @@ route.get("/terms-of-service", (req, res) => {
 
 // *********** POST requests **********
 route.post("/api/events/:eventId/share", trackEventShare);
+route.post("/events/:slug/register", submitRegistration);
+
+// *********** REGISTRATION API ROUTES **********
+route.get("/api/events/:eventId/registration-status", getRegistrationStatus);
 route.post("/contact", submitContactForm);
 
 // *********** DONATION/STRIPE ROUTES **********

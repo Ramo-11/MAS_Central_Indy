@@ -5,14 +5,16 @@ class EventsManager {
         this.currentView = 'card';
         this.currentPeriod = 'upcoming';
         this.currentCategory = 'all';
+        this.currentEventType = 'all'; // 'all', 'one-time', 'recurring'
         this.currentPage = 1;
         this.hasMore = true;
         this.loading = false;
         this.events = [];
+        this.filteredEvents = [];
         this.currentMonth = new Date().getMonth();
         this.currentYear = new Date().getFullYear();
         this.calendarClickHandler = null; // Store the event handler
-        
+
         this.init();
     }
 
@@ -36,6 +38,11 @@ class EventsManager {
         // Category filter
         document.querySelectorAll('.category-btn').forEach(btn => {
             btn.addEventListener('click', () => this.filterByCategory(btn.dataset.category));
+        });
+
+        // Event type filter (one-time vs recurring)
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.filterByEventType(btn.dataset.type));
         });
 
         // Load more button
@@ -108,21 +115,67 @@ class EventsManager {
 
     filterByCategory(category) {
         if (this.currentCategory === category) return;
-        
+
         this.currentCategory = category;
         this.currentPage = 1;
         this.hasMore = true;
-        
+
         // Update active state
         document.querySelectorAll('.category-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.category === category);
         });
 
         this.loadEvents(true);
-        
+
         if (this.currentView === 'calendar') {
             this.renderCalendar();
         }
+    }
+
+    filterByEventType(type) {
+        if (this.currentEventType === type) return;
+
+        this.currentEventType = type;
+
+        // Update active state
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+
+        // Filter events client-side
+        this.applyEventTypeFilter();
+        this.renderFilteredEvents();
+    }
+
+    applyEventTypeFilter() {
+        if (this.currentEventType === 'all') {
+            this.filteredEvents = [...this.events];
+        } else if (this.currentEventType === 'recurring') {
+            this.filteredEvents = this.events.filter(event => event.recurring?.isRecurring === true);
+        } else if (this.currentEventType === 'one-time') {
+            this.filteredEvents = this.events.filter(event => !event.recurring?.isRecurring);
+        }
+    }
+
+    renderFilteredEvents() {
+        const grid = document.getElementById('eventsGrid');
+        const noEvents = document.getElementById('noEvents');
+
+        if (this.filteredEvents.length === 0) {
+            grid.innerHTML = '';
+            noEvents.style.display = 'block';
+            return;
+        }
+
+        noEvents.style.display = 'none';
+        grid.innerHTML = '';
+
+        this.filteredEvents.forEach(event => {
+            const eventCard = this.createEventCard(event);
+            grid.appendChild(eventCard);
+        });
+
+        this.updateLoadMoreButton();
     }
 
     async loadInitialEvents() {
@@ -157,8 +210,9 @@ class EventsManager {
                 } else {
                     this.events = [...this.events, ...data.events];
                 }
-                
+
                 this.hasMore = data.hasMore;
+                this.applyEventTypeFilter();
                 this.renderEvents();
                 this.updateLoadMoreButton();
             } else {
@@ -200,20 +254,24 @@ class EventsManager {
     renderEvents() {
         const grid = document.getElementById('eventsGrid');
         const noEvents = document.getElementById('noEvents');
-        
-        if (this.events.length === 0) {
+
+        const eventsToRender = this.filteredEvents.length > 0 || this.currentEventType !== 'all'
+            ? this.filteredEvents
+            : this.events;
+
+        if (eventsToRender.length === 0) {
             grid.innerHTML = '';
             noEvents.style.display = 'block';
             return;
         }
-        
+
         noEvents.style.display = 'none';
-        
+
         if (this.currentPage === 1) {
             grid.innerHTML = '';
         }
-        
-        this.events.slice((this.currentPage - 1) * 12).forEach(event => {
+
+        eventsToRender.slice((this.currentPage - 1) * 12).forEach(event => {
             const eventCard = this.createEventCard(event);
             grid.appendChild(eventCard);
         });
@@ -222,14 +280,17 @@ class EventsManager {
     createEventCard(event) {
         const card = document.createElement('article');
         card.className = 'event-item';
+        if (event.recurring?.isRecurring) {
+            card.classList.add('recurring-event');
+        }
         card.setAttribute('data-event-id', event._id);
-        
+
         const thumbnail = this.createThumbnail(event);
         const content = this.createEventContent(event);
-        
+
         card.appendChild(thumbnail);
         card.appendChild(content);
-        
+
         return card;
     }
 
@@ -286,14 +347,29 @@ class EventsManager {
     createEventContent(event) {
         const content = document.createElement('div');
         content.className = 'event-content';
-        
+
         const category = this.formatCategory(event.category);
         const date = this.formatDate(event.eventDate, event.timezone);
         const time = this.formatTime(event.startTime);
         const description = event.shortDescription || (event.description ? event.description.substring(0, 150) + '...' : '');
-        
+        const isRecurring = event.recurring?.isRecurring;
+        const hasRegistration = event.registration?.isRequired && this.currentPeriod === 'upcoming';
+        const frequency = isRecurring ? this.formatFrequency(event.recurring.frequency) : '';
+
         content.innerHTML = `
-            <span class="event-category">${category}</span>
+            <div class="event-badges">
+                <span class="event-category">${category}</span>
+                ${isRecurring ? `
+                    <span class="event-type-badge recurring-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 2.1l4 4-4 4"></path>
+                            <path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4"></path>
+                            <path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"></path>
+                        </svg>
+                        ${frequency || 'Program'}
+                    </span>
+                ` : ''}
+            </div>
             <h3 class="event-title">
                 <a href="/events/${event.slug}" class="event-title-link">${event.title}</a>
             </h3>
@@ -348,7 +424,19 @@ class EventsManager {
                         </svg>
                     </button>
                 </div>
-                <a href="/events/${event.slug}" class="learn-more-btn">Learn More</a>
+                ${hasRegistration ? `
+                    <a href="/events/${event.slug}/register" class="register-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                        Register
+                    </a>
+                ` : `
+                    <a href="/events/${event.slug}" class="learn-more-btn">Learn More</a>
+                `}
             </div>
         `;
         
@@ -876,14 +964,26 @@ class EventsManager {
             const [hours, minutes] = time.split(':');
             const timeObj = new Date();
             timeObj.setHours(parseInt(hours), parseInt(minutes));
-            return timeObj.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
+            return timeObj.toLocaleTimeString('en-US', {
+                hour: 'numeric',
                 minute: '2-digit',
-                hour12: true 
+                hour12: true
             });
         } catch (error) {
             return time;
         }
+    }
+
+    formatFrequency(frequency) {
+        const frequencyMap = {
+            'daily': 'Daily',
+            'weekly': 'Weekly',
+            'biweekly': 'Bi-weekly',
+            'monthly': 'Monthly',
+            'yearly': 'Yearly',
+            'custom': 'Recurring'
+        };
+        return frequencyMap[frequency] || 'Program';
     }
 }
 
