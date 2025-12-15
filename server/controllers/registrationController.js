@@ -62,58 +62,8 @@ const getRegistrationPage = async (req, res) => {
             }
         }
 
-        // Sort fields by order
-        let fields = event.registration.fields || [];
-        fields.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-        // Default fields that should always be present
-        const defaultFields = [
-            {
-                name: 'Full Name',
-                type: 'text',
-                required: true,
-                placeholder: 'Enter your full name',
-                order: -2,
-            },
-            {
-                name: 'Email',
-                type: 'email',
-                required: true,
-                placeholder: 'your@email.com',
-                order: -1,
-            },
-            {
-                name: 'Phone',
-                type: 'phone',
-                required: false,
-                placeholder: '(555) 123-4567',
-                order: 0,
-            },
-        ];
-
-        // Check which default fields are missing and add them
-        const hasNameField = fields.some(
-            (f) => f.type === 'text' && (f.name.toLowerCase().includes('name') || f.name.toLowerCase() === 'full name')
-        );
-        const hasEmailField = fields.some((f) => f.type === 'email');
-        const hasPhoneField = fields.some((f) => f.type === 'phone' || f.type === 'tel');
-
-        const fieldsToAdd = [];
-        if (!hasNameField) {
-            fieldsToAdd.push(defaultFields[0]);
-        }
-        if (!hasEmailField) {
-            fieldsToAdd.push(defaultFields[1]);
-        }
-        if (!hasPhoneField) {
-            fieldsToAdd.push(defaultFields[2]);
-        }
-
-        // Prepend missing default fields
-        fields = [...fieldsToAdd, ...fields];
-
-        // Re-sort after adding default fields
-        fields.sort((a, b) => (a.order || 0) - (b.order || 0));
+        // Sort fields by order - only show fields defined in the event's registration.fields
+        const fields = (event.registration.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
 
         res.render('event-registration', {
             title: `Register - ${event.title}`,
