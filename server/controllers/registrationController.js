@@ -62,8 +62,8 @@ const getRegistrationPage = async (req, res) => {
             }
         }
 
-        // Sort fields by order - only show fields defined in the event's registration.fields
-        const fields = (event.registration.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+        // Use fields in the order they appear in the database (no sorting)
+        const fields = event.registration.fields || [];
 
         res.render('event-registration', {
             title: `Register - ${event.title}`,
