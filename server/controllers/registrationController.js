@@ -145,20 +145,15 @@ const submitRegistration = async (req, res) => {
             email = formData.Email || formData.email || formData['E-mail'] || formData['e-mail'];
         }
 
-        if (!email) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email is required.',
-            });
-        }
-
-        // Check if already registered
-        const alreadyRegistered = await Registration.isAlreadyRegistered(event._id, email);
-        if (alreadyRegistered) {
-            return res.status(400).json({
-                success: false,
-                message: 'You have already registered for this event with this email address.',
-            });
+        // Check for duplicate registration only if email is provided
+        if (email) {
+            const alreadyRegistered = await Registration.isAlreadyRegistered(event._id, email);
+            if (alreadyRegistered) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'You have already registered for this event with this email address.',
+                });
+            }
         }
 
         // Validate required fields
@@ -275,7 +270,7 @@ const submitRegistration = async (req, res) => {
         // Create registration
         const registration = new Registration({
             event: event._id,
-            email: email.toLowerCase(),
+            email: email ? email.toLowerCase() : null,
             registrationData: new Map(Object.entries(formData)),
             status: isWaitlisted ? 'waitlisted' : 'confirmed',
             isWaitlisted,
@@ -297,7 +292,7 @@ const submitRegistration = async (req, res) => {
         }
 
         generalLogger.info(
-            `New registration for event ${event.title}: ${email} (${
+            `New registration for event ${event.title}: ${email || 'no email'} (${
                 isWaitlisted ? 'waitlisted' : 'confirmed'
             })`
         );
